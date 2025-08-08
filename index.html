@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tech Escape - | IEEE SIT | Flag: IEEE{hidden_flag_found}</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <!-- Background Animation -->
+    <div class="background-animation">
+        <div class="circuit-lines"></div>
+        <div class="floating-particles"></div>
+        <!-- Hidden flag: IEEE{hidden_flag_found} -->
+        <div class="hidden-flag-element" style="position: absolute; top: 10px; right: 10px; opacity: 0.01; pointer-events: none; color: white; font-size: 1px;">IEEE{hidden_flag_found}</div>
+    </div>
+
+    <!-- Header -->
+    <header class="header">
+        <div class="container">
+            <div class="logo-section">
+                <div class="ieee-logo" data-flag="IEEE{hidden_flag_found}">
+                    <img src="ieee-logo.webp" alt="IEEE SIT Logo" class="ieee-logo-img">
+                    <span>IEEE SIT</span>
+                </div>
+                <h1 class="event-title">Tech Escape</h1>
+            </div>
+            <div class="timer-section">
+                <div class="countdown-timer" id="countdown">
+                    <div class="time-unit">
+                        <span class="time-value" id="minutes">15</span>
+                        <span class="time-label">Minutes</span>
+                    </div>
+                    <div class="time-unit">
+                        <span class="time-value" id="seconds">00</span>
+                        <span class="time-label">Seconds</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Authentication Screen -->
+        <div class="auth-container" id="authContainer">
+            <div class="auth-card">
+                <div class="auth-header">
+                    <h2>Welcome to Tech Escape</h2>
+                    <p>Embark on your digital treasure hunt adventure</p>
+                </div>
+                
+                <!-- Login Form -->
+                <div class="auth-form" id="loginForm">
+                    <h3>Team Login</h3>
+                    <form id="login">
+                        <div class="input-group">
+                            <i class="fas fa-users"></i>
+                            <input type="text" id="teamName" placeholder="Team Name" required>
+                        </div>
+                        <div class="input-group">
+                            <i class="fas fa-lock"></i>
+                            <input type="password" id="teamPassword" placeholder="Team Password" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-sign-in-alt"></i>
+                            Start Adventure
+                        </button>
+                    </form>
+                    <p class="auth-switch">
+                        New team? <a href="#" id="showRegister">Register here</a>
+                    </p>
+                </div>
+
+                <!-- Registration Form -->
+                <div class="auth-form hidden" id="registerForm">
+                    <h3>Team Registration</h3>
+                    <form id="register">
+                        <div class="input-group">
+                            <i class="fas fa-users"></i>
+                            <input type="text" id="newTeamName" placeholder="Team Name" required>
+                        </div>
+                        <div class="input-group">
+                            <i class="fas fa-user"></i>
+                            <input type="text" id="teamLeader" placeholder="Team Leader Name" required>
+                        </div>
+                        <div class="input-group">
+                            <i class="fas fa-envelope"></i>
+                            <input type="email" id="teamEmail" placeholder="Team Email" required>
+                        </div>
+                        <div class="input-group">
+                            <i class="fas fa-lock"></i>
+                            <input type="password" id="newTeamPassword" placeholder="Create Password" required>
+                        </div>
+                        <div class="input-group">
+                            <i class="fas fa-hashtag"></i>
+                            <input type="number" id="teamSize" placeholder="Team Size" min="1" max="6" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-rocket"></i>
+                            Create Team
+                        </button>
+                    </form>
+                    <p class="auth-switch">
+                        Already registered? <a href="#" id="showLogin">Login here</a>
+                    </p>
+                    <button type="button" class="btn btn-test" id="testBtn">
+                        🧪 Test Demo (Skip Registration)
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Game Interface -->
+        <div class="game-container hidden" id="gameContainer">
+            <!-- Progress Tracker -->
+            <div class="progress-section">
+                <div class="container">
+                    <div class="progress-header">
+                        <h3>Team Progress</h3>
+                        <div class="team-info">
+                            <span class="team-name" id="currentTeamName">Team Alpha</span>
+                            <span class="hints-remaining">
+                                <i class="fas fa-lightbulb"></i>
+                                <span id="hintsCount">3</span> hints remaining
+                            </span>
+                            <button class="logout-btn" id="logoutBtn">
+                                <i class="fas fa-sign-out-alt"></i>
+                                Logout
+                            </button>
+                        </div>
+                    </div>
+                    <div class="progress-tracker">
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="progressFill"></div>
+                        </div>
+                        <div class="progress-nodes" id="progressNodes">
+                            <!-- Progress nodes will be generated by JavaScript -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Riddles Section -->
+            <div class="riddles-section">
+                <div class="container">
+                    <div class="riddle-card" id="riddleCard">
+                        <div class="riddle-header">
+                            <h4 class="riddle-title">Challenge <span id="riddleNumber">1</span> of 6</h4>
+                            <div class="riddle-actions">
+                                <button class="btn btn-nav" id="prevBtn" style="display: none;">
+                                    <i class="fas fa-arrow-left"></i>
+                                    Previous
+                                </button>
+                                <button class="btn btn-hint" id="hintBtn">
+                                    <i class="fas fa-lightbulb"></i>
+                                    Hint
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="riddle-content">
+                            <div class="riddle-question" id="riddleQuestion">
+                                <!-- Riddle content will be loaded here -->
+                            </div>
+                            
+                            <div class="hint-section hidden" id="hintSection">
+                                <div class="hint-content">
+                                    <i class="fas fa-info-circle"></i>
+                                    <span id="hintText">Hint will appear here</span>
+                                </div>
+                            </div>
+                            
+                            <form class="answer-form" id="answerForm">
+                                <div class="input-group">
+                                    <input type="text" id="riddleAnswer" placeholder="XYZ{your_flag}" required>
+                                </div>
+                                <button type="submit" class="btn btn-submit">
+                                    <i class="fas fa-arrow-right"></i>
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Final Clue Section -->
+            <div class="final-clue-section hidden" id="finalClueSection">
+                <div class="container">
+                    <div class="final-clue-card">
+                        <div class="completion-celebration">
+                            <i class="fas fa-trophy"></i>
+                            <h2>Congratulations!</h2>
+                            <p>You have successfully completed all challenges!</p>
+                        </div>
+                        
+                        <div class="final-clue-content">
+                            <h3>Your Final Clue</h3>
+                            <div class="clue-text" id="finalClueText">
+                                <!-- Personalized clue will be generated here -->
+                            </div>
+                            <div class="location-hint">
+                                <i class="fas fa-map-marker-alt"></i>
+                                <span>This clue leads to a location within the SIT building</span>
+                            </div>
+                        </div>
+                        
+                        <div class="team-stats">
+                            <h4>Team Performance</h4>
+                            <div class="stats-grid">
+                                <div class="stat-item">
+                                    <span class="stat-value" id="finalTime">--:--</span>
+                                    <span class="stat-label">Completion Time</span>
+                                </div>
+                                <div class="stat-item">
+                                    <span class="stat-value" id="hintsUsed">0</span>
+                                    <span class="stat-label">Hints Used</span>
+                                </div>
+                                <div class="stat-item">
+                                    <span class="stat-value" id="teamRank">#1</span>
+                                    <span class="stat-label">Current Rank</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Success/Error Messages -->
+    <div class="message-container" id="messageContainer"></div>
+
+    <!-- Scripts -->
+    <script src="popup-manager.js"></script>
+    <script src="script.js"></script>
+    <!-- Hidden flag: IEEE{hidden_flag_found} -->
+</body>
+</html>

@@ -1,0 +1,50 @@
+All 6 Challenges Completely Redesigned:
+
+ Challenge 1: IEEE Knowledge Quiz (Harder!)
+- Before: Easy clicking buttons
+- Now: 3 technical questions students must research:
+  - IEEE 802.11 standard (WiFi)
+  - TCP full form (Transmission Control Protocol) 
+  - First computer virus year (1971)
+- Answer: `IEEE{wireless_protocol_1971}`
+
+ Challenge 2: Number System Conversion (No more convert button!)
+- Before: Button did the work for them
+- Now: Students must manually solve:
+  - Binary `11010110` to decimal (214)
+  - Hex `2F` to decimal (47)
+  - Decimal `85` to binary (01010101)
+- Answer: `CONVERT{214_47_01010101}`
+
+ Challenge 3: Programming Logic (First-year friendly!)
+- Before: Complex Python function
+- Now: Simple programming concepts:
+  - Operator precedence: `5 + 3 * 2` = 11
+  - If-else syntax: missing keyword "else"
+  - Loop iterations: `range(3,8)` runs 5 times
+- Answer: `LOGIC{11_else_5}`
+
+ Challenge 4: Electrical Engineering (No calculate button!)
+- Before: Button calculated resistance
+- Now: Students solve manually:
+  - Parallel resistance: 8Ω and 12Ω = 4.8Ω
+  - Ohm's Law: V=9V, R=3Ω → I=3A
+  - Power: P=I²R, I=2A, R=5Ω → P=20W
+- Answer: `OHMS{4.8_3_20}`
+
+ Challenge 5: Cybersecurity (Replaced easy database!)
+- Before: Simple database query
+- Now: Real security challenges:
+  - Caesar cipher decode: `WHFK HVFDSH` → "tech escape"
+  - HTTPS port number: 443
+  - SQL injection target: database
+- Answer: `SECURE{tech_escape_443_database}`
+
+ Challenge 6: Algorithm & Logic (Much better!)
+- Before: Memory pattern game
+- Now: Computer science problems:
+  - Big O complexity: Linear search O(n)
+  - Tree traversal: Inorder gives sorted order
+  - Pattern: 2,6,12,20,30,42 (n(n+1))
+  - Data structure: Stack uses LIFO
+- Answer: `ALGO{n_inorder_42_stack}`
