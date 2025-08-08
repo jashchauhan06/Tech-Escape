@@ -36,7 +36,21 @@ export default function GameContainer() {
     if (answer.toLowerCase() === currentRiddleData.answer.toLowerCase()) {
       showMessage('🎉 Correct! Moving to next challenge...', 'success')
       setAnswer('')
-      // In a full implementation, this would advance to the next riddle
+      
+      // Advance to next riddle
+      if (currentRiddle < riddles.length - 1) {
+        // Move to next riddle
+        setTimeout(() => {
+          // This would update the currentRiddle state
+          // For now, we'll just show a message
+          showMessage('Challenge completed! Next challenge loading...', 'success')
+        }, 2000)
+      } else {
+        // All riddles completed - redirect to final riddle
+        setTimeout(() => {
+          window.location.href = '/final-riddle'
+        }, 2000)
+      }
     } else {
       showMessage('❌ Incorrect answer. Try again!', 'error')
     }

@@ -168,3 +168,31 @@ body {
   -moz-user-select: none;
   -ms-user-select: none;
 }
+
+/* Final Riddle Animations */
+.riddle-line.animate-in {
+  animation: slideInFromLeft 0.6s ease-in-out forwards;
+}
+
+@keyframes slideInFromLeft {
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes fadeIn {
+  from { 
+    opacity: 0; 
+    transform: translateY(-10px); 
+  }
+  to { 
+    opacity: 1; 
+    transform: translateY(0); 
+  }
+}
+
+/* Text shadow utility */
+.text-shadow {
+  text-shadow: 0 0 20px rgba(0, 170, 255, 0.5);
+}
