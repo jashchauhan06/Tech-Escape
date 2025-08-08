@@ -5,6 +5,7 @@ import Header from '@/components/Header'
 import AuthContainer from '@/components/AuthContainer'
 import GameContainer from '@/components/GameContainer'
 import MessageContainer from '@/components/MessageContainer'
+import ConnectionStatus from '@/components/ConnectionStatus'
 import { useGameState } from '@/hooks/useGameState'
 
 export default function Home() {
@@ -30,6 +31,9 @@ export default function Home() {
 
       {/* Header */}
       <Header />
+
+      {/* Connection Status */}
+      <ConnectionStatus />
 
       {/* Main Content */}
       <div className="min-h-[calc(100vh-120px)] py-8">

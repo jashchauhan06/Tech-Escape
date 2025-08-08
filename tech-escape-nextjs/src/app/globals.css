@@ -1,26 +1,198 @@
-@import "tailwindcss";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  /* IEEE SIT Brand Colors */
+  --primary-color: #0066cc;
+  --secondary-color: #004499;
+  --accent-color: #00aaff;
+  --success-color: #00cc66;
+  --warning-color: #ff9900;
+  --danger-color: #ff3333;
+  
+  /* Campus-inspired Colors */
+  --campus-blue: #1e3a8a;
+  --campus-green: #059669;
+  --campus-orange: #ea580c;
+  
+  /* Neutral Colors */
+  --bg-primary: #0a0e1a;
+  --bg-secondary: #1a1f2e;
+  --bg-tertiary: #2a2f3e;
+  --text-primary: #ffffff;
+  --text-secondary: #a8b3cf;
+  --text-muted: #6b7280;
+  --border-color: #374151;
+  
+  /* Effects */
+  --gradient-primary: linear-gradient(135deg, #0066cc, #00aaff);
+  --gradient-secondary: linear-gradient(135deg, #1e3a8a, #3b82f6);
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+  
+  /* Typography */
+  --font-family: var(--font-inter), sans-serif;
+  --font-mono: var(--font-fira-code), monospace;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-family);
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  line-height: 1.6;
+  overflow-x: hidden;
+}
+
+/* Background Animation */
+.background-animation {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: -1;
+  overflow: hidden;
+}
+
+.circuit-lines {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  background-image: 
+    linear-gradient(90deg, rgba(0, 102, 204, 0.1) 1px, transparent 1px),
+    linear-gradient(rgba(0, 102, 204, 0.1) 1px, transparent 1px);
+  background-size: 50px 50px;
+  animation: circuitMove 20s linear infinite;
+}
+
+.floating-particles {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+}
+
+.floating-particles::before,
+.floating-particles::after {
+  content: '';
+  position: absolute;
+  width: 2px;
+  height: 2px;
+  background: var(--accent-color);
+  border-radius: 50%;
+  box-shadow: 
+    0 0 10px var(--accent-color),
+    20px 30px 0 rgba(0, 170, 255, 0.8),
+    40px 70px 0 rgba(0, 170, 255, 0.6),
+    90px 40px 0 rgba(0, 170, 255, 0.7),
+    120px 80px 0 rgba(0, 170, 255, 0.5);
+  animation: float 6s ease-in-out infinite alternate;
+}
+
+@keyframes circuitMove {
+  0% { transform: translate(0, 0); }
+  100% { transform: translate(50px, 50px); }
+}
+
+@keyframes float {
+  0% { transform: translateY(0) rotate(0deg); }
+  100% { transform: translateY(-20px) rotate(180deg); }
+}
+
+/* Utility Classes */
+.hidden {
+  display: none !important;
+}
+
+/* Message Container */
+.message-container {
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.message {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 0.5rem;
+  padding: 1rem 1.5rem;
+  max-width: 300px;
+  box-shadow: var(--shadow-lg);
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  transform: translateX(100%);
+  opacity: 0;
+  animation: slideIn 0.3s ease forwards;
+}
+
+.message.success {
+  border-color: var(--success-color);
+  background: rgba(0, 204, 102, 0.1);
+}
+
+.message.error {
+  border-color: var(--danger-color);
+  background: rgba(255, 51, 51, 0.1);
+}
+
+.message.warning {
+  border-color: var(--warning-color);
+  background: rgba(255, 153, 0, 0.1);
+}
+
+@keyframes slideIn {
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+/* Hidden flag element */
+.hidden-flag-element {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  opacity: 0.01;
+  pointer-events: none;
+  color: white;
+  font-size: 1px;
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+}
+
+/* Final Riddle Animations */
+.riddle-line.animate-in {
+  animation: slideInFromLeft 0.6s ease-in-out forwards;
+}
+
+@keyframes slideInFromLeft {
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes fadeIn {
+  from { 
+    opacity: 0; 
+    transform: translateY(-10px); 
+  }
+  to { 
+    opacity: 1; 
+    transform: translateY(0); 
+  }
+}
+
+/* Text shadow utility */
+.text-shadow {
+  text-shadow: 0 0 20px rgba(0, 170, 255, 0.5);
 }
