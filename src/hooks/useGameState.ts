@@ -1,22 +1,8 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-
-interface Team {
-  id: number
-  name: string
-  leader: string
-  email: string
-  password: string
-  size: number
-  progress: {
-    currentRiddle: number
-    hintsUsed: number
-    startTime: string
-    completedRiddles: number[]
-  }
-  registeredAt: string
-}
+import { teamService, gameSessionService } from '@/lib/database'
+import { Team, GameSession } from '@/lib/supabase'
 
 interface Message {
   id: string
@@ -26,185 +12,241 @@ interface Message {
 
 export function useGameState() {
   const [currentTeam, setCurrentTeam] = useState<Team | null>(null)
+  const [currentSession, setCurrentSession] = useState<GameSession | null>(null)
   const [currentRiddle, setCurrentRiddle] = useState(0)
   const [hintsUsed, setHintsUsed] = useState(0)
   const [maxHints] = useState(3)
   const [showGameInterface, setShowGameInterface] = useState(false)
   const [messages, setMessages] = useState<Message[]>([])
-  const [teams, setTeams] = useState<Team[]>([])
+  const [isLoading, setIsLoading] = useState(false)
 
-  // Load teams from localStorage
+  // Load session from localStorage on mount
   useEffect(() => {
-    const savedTeams = localStorage.getItem('techEscapeTeams')
-    if (savedTeams) {
-      setTeams(JSON.parse(savedTeams))
+    const savedTeamId = localStorage.getItem('currentTeamId')
+    if (savedTeamId) {
+      loadTeamSession(savedTeamId)
     }
   }, [])
 
-  // Check if user is already authenticated
-  useEffect(() => {
-    const savedTeam = localStorage.getItem('techEscapeTeam')
-    if (savedTeam) {
-      try {
-        const team = JSON.parse(savedTeam)
-        setCurrentTeam(team)
-        setShowGameInterface(true)
-        setCurrentRiddle(team.progress?.currentRiddle || 0)
-        setHintsUsed(team.progress?.hintsUsed || 0)
-      } catch (error) {
-        console.error('Error loading saved team:', error)
-        localStorage.removeItem('techEscapeTeam')
+  const loadTeamSession = async (teamId: string) => {
+    setIsLoading(true)
+    try {
+      // Load team data
+      const teamResult = await teamService.getTeamById(teamId)
+      if (teamResult.success && teamResult.team) {
+        setCurrentTeam(teamResult.team)
+        
+        // Load or create game session
+        const sessionResult = await gameSessionService.getCurrentSession(teamId)
+        if (sessionResult.success && sessionResult.session) {
+          setCurrentSession(sessionResult.session)
+          setCurrentRiddle(sessionResult.session.currentRiddle)
+          setHintsUsed(sessionResult.session.hintsUsed)
+          setShowGameInterface(true)
+        } else {
+          // Create new session
+          const newSessionResult = await gameSessionService.createSession(teamId)
+          if (newSessionResult.success && newSessionResult.session) {
+            setCurrentSession(newSessionResult.session)
+            setShowGameInterface(true)
+          }
+        }
       }
+    } catch (error) {
+      showMessage('Failed to load team session', 'error')
+    } finally {
+      setIsLoading(false)
     }
-  }, [])
+  }
 
-  const showMessage = (text: string, type: 'success' | 'error' | 'warning' | 'info' = 'info') => {
-    const newMessage: Message = {
+  const showMessage = (text: string, type: 'success' | 'error' | 'warning' | 'info') => {
+    const message: Message = {
       id: Date.now().toString(),
       text,
       type
     }
-    setMessages(prev => [...prev, newMessage])
+    setMessages(prev => [...prev, message])
     
-    // Auto-remove message after 5 seconds
+    // Remove message after 5 seconds
     setTimeout(() => {
-      setMessages(prev => prev.filter(msg => msg.id !== newMessage.id))
+      setMessages(prev => prev.filter(m => m.id !== message.id))
     }, 5000)
   }
 
-  const handleLogin = (teamName: string, password: string) => {
-    const team = teams.find(t => 
-      t.name.toLowerCase() === teamName.toLowerCase() && t.password === password
-    )
+  const handleRegister = async (teamData: {
+    teamName: string
+    teamLeader: string
+    email: string
+    password: string
+    teamSize: string
+  }) => {
+    setIsLoading(true)
+    try {
+      const result = await teamService.registerTeam({
+        name: teamData.teamName,
+        leader: teamData.teamLeader,
+        email: teamData.email,
+        password: teamData.password,
+        size: parseInt(teamData.teamSize),
+        progress: {
+          currentRiddle: 0,
+          hintsUsed: 0,
+          startTime: new Date().toISOString(),
+          completedRiddles: []
+        }
+      })
 
-    if (team) {
-      setCurrentTeam(team)
-      localStorage.setItem('techEscapeTeam', JSON.stringify(team))
-      showMessage('Welcome back! Loading your progress...', 'success')
-      setTimeout(() => {
+      if (result.success && result.team) {
+        setCurrentTeam(result.team)
+        localStorage.setItem('currentTeamId', result.team.id)
+        
+        // Create game session
+        const sessionResult = await gameSessionService.createSession(result.team.id)
+        if (sessionResult.success && sessionResult.session) {
+          setCurrentSession(sessionResult.session)
+        }
+        
         setShowGameInterface(true)
-        setCurrentRiddle(team.progress?.currentRiddle || 0)
-        setHintsUsed(team.progress?.hintsUsed || 0)
-      }, 1000)
-    } else {
-      showMessage('Invalid team name or password. Please try again.', 'error')
-    }
-  }
-
-  const handleRegister = (teamData: Omit<Team, 'id' | 'progress' | 'registeredAt'>) => {
-    // Check if team name already exists
-    if (teams.find(t => t.name.toLowerCase() === teamData.name.toLowerCase())) {
-      showMessage('Team name already exists. Please choose a different name.', 'error')
-      return
-    }
-
-    const newTeam: Team = {
-      id: Date.now(),
-      ...teamData,
-      progress: {
-        currentRiddle: 0,
-        hintsUsed: 0,
-        startTime: new Date().toISOString(),
-        completedRiddles: []
-      },
-      registeredAt: new Date().toISOString()
-    }
-
-    const updatedTeams = [...teams, newTeam]
-    setTeams(updatedTeams)
-    localStorage.setItem('techEscapeTeams', JSON.stringify(updatedTeams))
-    
-    setCurrentTeam(newTeam)
-    localStorage.setItem('techEscapeTeam', JSON.stringify(newTeam))
-
-    showMessage(`Team "${teamData.name}" registered successfully! Welcome to Tech Escape!`, 'success')
-    setTimeout(() => {
-      setShowGameInterface(true)
-    }, 1500)
-  }
-
-  const createTestTeam = () => {
-    const testTeam: Team = {
-      id: 999999,
-      name: 'Demo Team',
-      leader: 'Test User',
-      email: 'test@demo.com',
-      password: 'demo123',
-      size: 1,
-      progress: {
-        currentRiddle: 0,
-        hintsUsed: 0,
-        startTime: new Date().toISOString(),
-        completedRiddles: []
-      },
-      registeredAt: new Date().toISOString()
-    }
-
-    setCurrentTeam(testTeam)
-    localStorage.setItem('techEscapeTeam', JSON.stringify(testTeam))
-
-    showMessage('Demo team created! Starting game...', 'success')
-    setTimeout(() => {
-      setShowGameInterface(true)
-    }, 1000)
-  }
-
-  const saveGameProgress = () => {
-    if (!currentTeam) return
-
-    const updatedTeam = {
-      ...currentTeam,
-      progress: {
-        currentRiddle,
-        hintsUsed,
-        startTime: currentTeam.progress.startTime,
-        completedRiddles: Array.from({length: currentRiddle}, (_, i) => i)
+        showMessage('🎉 Team registered successfully!', 'success')
+      } else {
+        showMessage(result.error || 'Registration failed', 'error')
       }
+    } catch (error) {
+      showMessage('Registration failed', 'error')
+    } finally {
+      setIsLoading(false)
     }
+  }
 
-    setCurrentTeam(updatedTeam)
-    localStorage.setItem('techEscapeTeam', JSON.stringify(updatedTeam))
+  const handleLogin = async (teamName: string, password: string) => {
+    setIsLoading(true)
+    try {
+      const result = await teamService.loginTeam(teamName, password)
+      
+      if (result.success && result.team) {
+        setCurrentTeam(result.team)
+        localStorage.setItem('currentTeamId', result.team.id)
+        
+        // Load or create game session
+        const sessionResult = await gameSessionService.getCurrentSession(result.team.id)
+        if (sessionResult.success && sessionResult.session) {
+          setCurrentSession(sessionResult.session)
+          setCurrentRiddle(sessionResult.session.currentRiddle)
+          setHintsUsed(sessionResult.session.hintsUsed)
+        } else {
+          // Create new session
+          const newSessionResult = await gameSessionService.createSession(result.team.id)
+          if (newSessionResult.success && newSessionResult.session) {
+            setCurrentSession(newSessionResult.session)
+          }
+        }
+        
+        setShowGameInterface(true)
+        showMessage('🎉 Login successful!', 'success')
+      } else {
+        showMessage(result.error || 'Invalid credentials', 'error')
+      }
+    } catch (error) {
+      showMessage('Login failed', 'error')
+    } finally {
+      setIsLoading(false)
+    }
+  }
 
-    // Update in teams array
-    const teamIndex = teams.findIndex(t => t.id === currentTeam.id)
-    if (teamIndex !== -1) {
-      const updatedTeams = [...teams]
-      updatedTeams[teamIndex] = updatedTeam
-      setTeams(updatedTeams)
-      localStorage.setItem('techEscapeTeams', JSON.stringify(updatedTeams))
+  const createTestTeam = async () => {
+    setIsLoading(true)
+    try {
+      const result = await teamService.registerTeam({
+        name: 'Test Team',
+        leader: 'Test Leader',
+        email: 'test@example.com',
+        password: 'test123',
+        size: 3,
+        progress: {
+          currentRiddle: 0,
+          hintsUsed: 0,
+          startTime: new Date().toISOString(),
+          completedRiddles: []
+        }
+      })
+
+      if (result.success && result.team) {
+        setCurrentTeam(result.team)
+        localStorage.setItem('currentTeamId', result.team.id)
+        
+        const sessionResult = await gameSessionService.createSession(result.team.id)
+        if (sessionResult.success && sessionResult.session) {
+          setCurrentSession(sessionResult.session)
+        }
+        
+        setShowGameInterface(true)
+        showMessage('🎉 Test team created!', 'success')
+      }
+    } catch (error) {
+      showMessage('Failed to create test team', 'error')
+    } finally {
+      setIsLoading(false)
     }
   }
 
   const handleLogout = () => {
-    if (confirm('Are you sure you want to logout? Your progress will be saved.')) {
-      saveGameProgress()
+    setCurrentTeam(null)
+    setCurrentSession(null)
+    setCurrentRiddle(0)
+    setHintsUsed(0)
+    setShowGameInterface(false)
+    localStorage.removeItem('currentTeamId')
+    showMessage('👋 Logged out successfully', 'info')
+  }
+
+  const completeRiddle = async (riddleIndex: number) => {
+    if (!currentSession) return
+    
+    try {
+      const result = await gameSessionService.completeRiddle(currentSession.id, riddleIndex)
+      if (result.success) {
+        setCurrentRiddle(riddleIndex + 1)
+        showMessage('🎉 Riddle completed!', 'success')
+      } else {
+        showMessage(result.error || 'Failed to complete riddle', 'error')
+      }
+    } catch (error) {
+      showMessage('Failed to complete riddle', 'error')
+    }
+  }
+
+  const useHint = async () => {
+    if (!currentSession || hintsUsed >= maxHints) return
+    
+    try {
+      const result = await gameSessionService.updateSession(currentSession.id, {
+        hintsUsed: hintsUsed + 1
+      })
       
-      setCurrentTeam(null)
-      localStorage.removeItem('techEscapeTeam')
-      
-      setCurrentRiddle(0)
-      setHintsUsed(0)
-      setShowGameInterface(false)
-      
-      showMessage('Logged out successfully!', 'success')
+      if (result.success && result.session) {
+        setHintsUsed(hintsUsed + 1)
+        setCurrentSession(result.session)
+        showMessage('💡 Hint used!', 'info')
+      }
+    } catch (error) {
+      showMessage('Failed to use hint', 'error')
     }
   }
 
   return {
     currentTeam,
     currentRiddle,
-    setCurrentRiddle,
     hintsUsed,
-    setHintsUsed,
     maxHints,
     showGameInterface,
-    setShowGameInterface,
-    showMessage,
     messages,
-    handleLogin,
+    isLoading,
     handleRegister,
+    handleLogin,
     createTestTeam,
     handleLogout,
-    saveGameProgress
+    showMessage,
+    completeRiddle,
+    useHint
   }
 }

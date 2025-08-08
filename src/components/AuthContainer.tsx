@@ -5,7 +5,7 @@ import { useGameState } from '@/hooks/useGameState'
 
 export default function AuthContainer() {
   const [showRegister, setShowRegister] = useState(false)
-  const { handleLogin, handleRegister, createTestTeam } = useGameState()
+  const { handleLogin, handleRegister, createTestTeam, isLoading } = useGameState()
 
   const [loginData, setLoginData] = useState({
     teamName: '',
@@ -77,9 +77,13 @@ export default function AuthContainer() {
                 onChange={(e) => setLoginData({...loginData, password: e.target.value})}
               />
             </div>
-            <button type="submit" className="btn btn-primary w-full py-3 px-6 bg-[var(--gradient-primary)] border border-[var(--primary-color)] rounded-lg text-white text-sm font-semibold transition-all duration-200 hover:bg-[var(--gradient-secondary)] hover:transform hover:-translate-y-1 hover:shadow-[var(--shadow-md)] flex items-center justify-center gap-2">
+            <button 
+              type="submit" 
+              disabled={isLoading}
+              className="btn btn-primary w-full py-3 px-6 bg-[var(--gradient-primary)] border border-[var(--primary-color)] rounded-lg text-white text-sm font-semibold transition-all duration-200 hover:bg-[var(--gradient-secondary)] hover:transform hover:-translate-y-1 hover:shadow-[var(--shadow-md)] flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
               <i className="fas fa-sign-in-alt"></i>
-              Start Adventure
+              {isLoading ? 'Logging in...' : 'Start Adventure'}
             </button>
           </form>
           <p className="auth-switch text-center mt-6 text-sm text-[var(--text-secondary)]">
@@ -148,9 +152,13 @@ export default function AuthContainer() {
                 onChange={(e) => setRegisterData({...registerData, teamSize: e.target.value})}
               />
             </div>
-            <button type="submit" className="btn btn-primary w-full py-3 px-6 bg-[var(--gradient-primary)] border border-[var(--primary-color)] rounded-lg text-white text-sm font-semibold transition-all duration-200 hover:bg-[var(--gradient-secondary)] hover:transform hover:-translate-y-1 hover:shadow-[var(--shadow-md)] flex items-center justify-center gap-2">
+            <button 
+              type="submit" 
+              disabled={isLoading}
+              className="btn btn-primary w-full py-3 px-6 bg-[var(--gradient-primary)] border border-[var(--primary-color)] rounded-lg text-white text-sm font-semibold transition-all duration-200 hover:bg-[var(--gradient-secondary)] hover:transform hover:-translate-y-1 hover:shadow-[var(--shadow-md)] flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
               <i className="fas fa-rocket"></i>
-              Create Team
+              {isLoading ? 'Creating Team...' : 'Create Team'}
             </button>
           </form>
           <p className="auth-switch text-center mt-6 text-sm text-[var(--text-secondary)]">
@@ -159,9 +167,10 @@ export default function AuthContainer() {
           <button 
             type="button" 
             onClick={createTestTeam}
-            className="btn btn-test w-full py-3 px-6 bg-[var(--campus-green)] border border-[var(--campus-green)] rounded-lg text-white text-sm font-semibold transition-all duration-200 hover:bg-[#047857] hover:border-[#047857] mt-4"
+            disabled={isLoading}
+            className="btn btn-test w-full py-3 px-6 bg-[var(--campus-green)] border border-[var(--campus-green)] rounded-lg text-white text-sm font-semibold transition-all duration-200 hover:bg-[#047857] hover:border-[#047857] mt-4 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            🧪 Test Demo (Skip Registration)
+            {isLoading ? 'Creating Demo...' : '🧪 Test Demo (Skip Registration)'}
           </button>
         </div>
       </div>

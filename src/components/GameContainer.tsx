@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { useGameState } from '@/hooks/useGameState'
 
 export default function GameContainer() {
-  const { currentTeam, currentRiddle, hintsUsed, maxHints, handleLogout, showMessage } = useGameState()
+  const { currentTeam, currentRiddle, hintsUsed, maxHints, handleLogout, showMessage, completeRiddle, useHint } = useGameState()
   const [answer, setAnswer] = useState('')
 
   const riddles = [
@@ -30,19 +30,19 @@ export default function GameContainer() {
 
   const currentRiddleData = riddles[currentRiddle]
 
-  const handleAnswerSubmit = (e: React.FormEvent) => {
+  const handleAnswerSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
     if (answer.toLowerCase() === currentRiddleData.answer.toLowerCase()) {
       showMessage('🎉 Correct! Moving to next challenge...', 'success')
       setAnswer('')
       
+      // Complete riddle in database
+      await completeRiddle(currentRiddle)
+      
       // Advance to next riddle
       if (currentRiddle < riddles.length - 1) {
-        // Move to next riddle
         setTimeout(() => {
-          // This would update the currentRiddle state
-          // For now, we'll just show a message
           showMessage('Challenge completed! Next challenge loading...', 'success')
         }, 2000)
       } else {
@@ -56,11 +56,13 @@ export default function GameContainer() {
     }
   }
 
-  const handleHint = () => {
+  const handleHint = async () => {
     if (hintsUsed >= maxHints) {
       showMessage('No hints remaining!', 'warning')
       return
     }
+    
+    await useHint()
     showMessage(`💡 Hint: ${currentRiddleData.hint}`, 'info')
   }
 
