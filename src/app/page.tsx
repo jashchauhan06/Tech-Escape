@@ -19,6 +19,18 @@ export default function Home() {
     messages 
   } = useGameState()
 
+  const [apiStatus, setApiStatus] = useState('')
+
+  const testAPI = async () => {
+    try {
+      const response = await fetch('/api/test')
+      const data = await response.json()
+      setApiStatus(`✅ API Test: ${data.message}`)
+    } catch (error) {
+      setApiStatus(`❌ API Test Failed: ${error.message}`)
+    }
+  }
+
   return (
     <main className="min-h-screen bg-[var(--bg-primary)] text-[var(--text-primary)]">
       {/* Background Animation */}
@@ -34,6 +46,21 @@ export default function Home() {
 
       {/* Connection Status */}
       <ConnectionStatus />
+
+      {/* API Test Button - Updated for deployment */}
+      <div className="fixed top-20 right-4 z-50">
+        <button 
+          onClick={testAPI}
+          className="bg-blue-500 text-white px-4 py-2 rounded-lg text-sm"
+        >
+          Test API (v2)
+        </button>
+        {apiStatus && (
+          <div className="mt-2 bg-gray-800 text-white px-3 py-2 rounded text-xs">
+            {apiStatus}
+          </div>
+        )}
+      </div>
 
       {/* Main Content */}
       <div className="min-h-[calc(100vh-120px)] py-8">
