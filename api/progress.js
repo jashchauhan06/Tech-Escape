@@ -54,14 +54,29 @@ export default async function handler(req, res) {
     if (!existing?.started_at) payload.started_at = now
     if (finished) payload.finished_at = now
 
-    const { data, error } = await supabase
-      .from('team_progress')
-      .upsert(payload, { onConflict: 'team_id' })
-      .select('*')
-      .single()
-    if (error) throw error
+    let row
+    if (existing) {
+      // Update existing row
+      const { data, error } = await supabase
+        .from('team_progress')
+        .update(payload)
+        .eq('team_id', teamId)
+        .select('*')
+        .single()
+      if (error) throw error
+      row = data
+    } else {
+      // Insert new row (no reliance on ON CONFLICT constraint)
+      const { data, error } = await supabase
+        .from('team_progress')
+        .insert(payload)
+        .select('*')
+        .single()
+      if (error) throw error
+      row = data
+    }
 
-    return res.status(200).json({ success: true, progress: data })
+    return res.status(200).json({ success: true, progress: row })
   } catch (err) {
     return res.status(500).json({ success: false, error: err.message })
   }

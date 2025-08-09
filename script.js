@@ -820,6 +820,23 @@ class TechEscapeGame {
         this.updateHintsDisplay();
         this.startTime = new Date();
 
+        // Ensure a leaderboard row exists for this team (idempotent)
+        try {
+            if (this.currentTeam) {
+                fetch('/api/progress', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        teamId: this.currentTeam.id,
+                        teamname: this.currentTeam.name,
+                        deltaMs: 0,
+                        completedCount: Math.min(this.currentRiddle, this.riddles.length),
+                        finished: false
+                    })
+                });
+            }
+        } catch {}
+
         // Restore last visited riddle from localStorage if available
         try {
             const savedIdxRaw = localStorage.getItem('te_currRiddle');
@@ -1101,7 +1118,11 @@ class TechEscapeGame {
             const data = await res.json();
             if (!data.success || !Array.isArray(data.leaderboard)) return;
             const total = data.leaderboard.length;
-            const my = data.leaderboard.find(r => (r.teamname || r.team_id) === this.currentTeam.name || (r.teamname || '').toLowerCase() === (this.currentTeam.name || '').toLowerCase());
+            const my = data.leaderboard.find(r => {
+                const byName = (r.teamname || '').toLowerCase() === (this.currentTeam.name || '').toLowerCase();
+                const byId = String(r.team_id) === String(this.currentTeam.id);
+                return byName || byId;
+            });
             if (my) {
                 el.textContent = `Team Position: ${my.rank}/${total}`;
                 el.title = `Rank ${my.rank} of ${total} • ${my.completed_count} solved • ${Math.floor((my.total_time_ms||0)/60000)}m`;

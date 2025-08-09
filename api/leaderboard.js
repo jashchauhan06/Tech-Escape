@@ -14,6 +14,7 @@ export default async function handler(req, res) {
   const supabase = createClient(supabaseUrl, supabaseKey)
 
   try {
+    // Ensure table exists and query safe
     const { data, error } = await supabase
       .from('team_progress')
       .select('team_id, teamname, completed_count, total_time_ms, started_at, finished_at, updated_at')
