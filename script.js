@@ -520,24 +520,33 @@ _____
             const data = await res.json();
             const bannerId = 'game-status-banner';
             let banner = document.getElementById(bannerId);
-            if (!data.started) {
+            const ensureBanner = (text) => {
                 if (!banner) {
                     banner = document.createElement('div');
                     banner.id = bannerId;
                     banner.style.position = 'fixed';
-                    banner.style.top = '70px';
-                    banner.style.right = '16px';
+                    banner.style.bottom = '16px';
+                    banner.style.left = '16px';
                     banner.style.zIndex = '1000';
                     banner.style.background = '#f59e0b';
                     banner.style.color = '#111827';
-                    banner.style.padding = '8px 12px';
-                    banner.style.borderRadius = '8px';
-                    banner.style.fontSize = '12px';
-                    banner.innerText = '⏳ Event has not started yet. Please wait for the admin.';
+                    banner.style.padding = '10px 14px';
+                    banner.style.borderRadius = '10px';
+                    banner.style.fontSize = '13px';
+                    banner.style.boxShadow = '0 10px 20px rgba(0,0,0,0.25)';
                     document.body.appendChild(banner);
                 }
-                // Stop any timer
-                if (this.timerInterval) clearInterval(this.timerInterval);
+                banner.innerText = text;
+            }
+            if (!data.started) {
+                ensureBanner('⏳ Event has not started yet. Please wait for the admin.');
+                if (this.timerInterval) { clearInterval(this.timerInterval); this.timerInterval = null; }
+            } else if (data.paused) {
+                ensureBanner('⏸ Event paused by admin');
+                if (this.timerInterval) { clearInterval(this.timerInterval); this.timerInterval = null; }
+                // Freeze display at current remaining
+                const endMs = Date.now() + (data.remainingMs || 0);
+                this.updateTimer(endMs); // one update to reflect current remaining
             } else {
                 if (banner) banner.remove();
                 const endMs = Date.now() + (data.remainingMs || 0);
