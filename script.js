@@ -243,41 +243,15 @@ class TechEscapeGame {
             {
                 id: 3,
                 question: `
-                    <h4>💻 Basic Programming Logic</h4>
-                    <p>Solve these simple programming problems:</p>
-                    <div class="programming-challenge">
-                        <div class="prog-problems">
-                            <div class="prog-problem">
-                                <p><strong>1.</strong> What will this code output?</p>
-                                <pre><code>x = 5
-y = 3
-print(x + y * 2)</code></pre>
-                                <input type="number" class="prog-input" id="prog1" placeholder="Output">
-                            </div>
-                            <div class="prog-problem">
-                                <p><strong>2.</strong> Complete the missing keyword:</p>
-                                <pre><code>if x > 10:
-    print("big")
-_____
-    print("small")</code></pre>
-                                <input type="text" class="prog-input" id="prog2" placeholder="Missing keyword">
-                            </div>
-                            <div class="prog-problem">
-                                <p><strong>3.</strong> How many times will this loop run?</p>
-                                <pre><code>for i in range(3, 8):
-    print(i)</code></pre>
-                                <input type="number" class="prog-input" id="prog3" placeholder="Number of iterations">
-                            </div>
-                        </div>
-                        <div class="prog-result" id="progResult" style="display:none;">
-                            <p>🎉 Correct! <strong>Flag:</strong> <code>LOGIC{11_else_5}</code></p>
-                        </div>
-                    </div>
-                    <p><strong>Solve all to get the flag:</strong></p>
+                    <h4>🛰️ Limited Scanner</h4>
+                    <p>There are <strong>6</strong> beacons hidden. Use the <strong>Scanner</strong> to pulse‑reveal them (<strong>2</strong> uses). Click all to win.</p>
+                    <button id="scan3" class="btn btn-primary">🔦 Pulse Scan (2)</button>
+                    <div id="hunt3" style="position:relative;height:260px;margin-top:10px;border:1px solid var(--border-color);border-radius:12px;overflow:hidden;background:radial-gradient(circle at 20% 30%,rgba(59,130,246,.08),transparent 40%),radial-gradient(circle at 70% 60%,rgba(34,197,94,.07),transparent 40%);"></div>
+                    <div id="hunt3Progress" class="mono" style="margin-top:8px;color:var(--text-secondary)">Found: 0/6 | Scans left: 2</div>
                 `,
-                answer: 'LOGIC{11_else_5}',
-                hint: 'Keep searching. In Tech Escape, only sharp minds survive.',
-                explanation: '5+3*2=11, missing keyword is "else", range(3,8) runs 5 times (3,4,5,6,7)',
+                answer: 'HIDDEN{pulse_detective_3}',
+                hint: 'Time your scan and watch the edges.',
+                explanation: 'Short highlight pulses with limited charges.',
                 interactive: true,
                 setupFunction: 'setupChallenge3'
             },
@@ -1461,58 +1435,72 @@ _____
         updateProgress();
     }
 
-    // Challenge 3: Lights Out
+    // Challenge 3: Limited Scanner (hidden beacons with 2 pulse scans)
     setupChallenge3() {
-        const gridEl = document.getElementById('lightsGrid');
-        const resultEl = document.getElementById('lightsResult');
-        if (!gridEl || !resultEl) return;
+        const area = document.getElementById('hunt3');
+        const progress = document.getElementById('hunt3Progress');
+        const scanBtn = document.getElementById('scan3');
+        if (!area || !progress || !scanBtn) return;
 
-        const size = 5;
-        const state = Array.from({ length: size }, () => Array(size).fill(0));
-        // Target pattern (parity): simple cross solution
-        const target = [
-            [0,1,0,1,0],
-            [1,0,1,0,1],
-            [0,1,1,1,0],
-            [1,0,1,0,1],
-            [0,1,0,1,0],
-        ];
+        const TOTAL = 6;
+        let scans = 2;
+        let found = 0;
+        const beacons = [];
 
-        function render() {
-            gridEl.innerHTML = '';
-            for (let r=0;r<size;r++){
-                for (let c=0;c<size;c++){
-                    const btn = document.createElement('button');
-                    btn.style.width='40px';btn.style.height='40px';btn.style.borderRadius='6px';
-                    btn.style.border='1px solid var(--border-color)';
-                    btn.style.background = state[r][c] ? '#10b981' : 'var(--bg-tertiary)';
-                    btn.onclick = () => toggle(r,c);
-                    gridEl.appendChild(btn);
+        function updateProgress(){
+            progress.textContent = `Found: ${found}/${TOTAL} | Scans left: ${scans}`;
+            if (found===TOTAL){
+                progress.innerHTML = '🎉 All beacons found! Flag: <code>HIDDEN{pulse_detective_3}</code>';
+                window.techEscapeGame?.showMessage('📡 Sector cleared!', 'success');
+                scanBtn.disabled = true;
+            }
+        }
+
+        for (let i=0;i<TOTAL;i++){
+            const b = document.createElement('div');
+            b.style.position='absolute';
+            b.style.width='14px'; b.style.height='14px'; b.style.borderRadius='50%';
+            b.style.transform='translate(-50%,-50%)';
+            b.style.left = (10+Math.random()*80)+'%';
+            b.style.top = (10+Math.random()*80)+'%';
+            b.style.background='transparent';
+            b.style.boxShadow='none';
+            b.dataset.found='0';
+            b.onclick=()=>{
+                if (b.dataset.found==='1') return;
+                b.dataset.found='1';
+                found++;
+                b.style.background='#f59e0b';
+                b.style.boxShadow='0 0 10px rgba(245,158,11,.9)';
+                updateProgress();
+            };
+            area.appendChild(b); beacons.push(b);
+        }
+
+        function pulse(duration=700){
+            const start = Date.now();
+            const tick = () => {
+                const t = Date.now() - start;
+                const alpha = Math.max(0, 1 - t/duration);
+                for (const b of beacons){
+                    if (b.dataset.found==='1') continue;
+                    b.style.background = `rgba(59,130,246,${0.25*alpha})`;
+                    b.style.boxShadow = `0 0 ${10*alpha}px rgba(59,130,246,${0.7*alpha})`;
                 }
-            }
-            checkSolved();
+                if (t<duration) requestAnimationFrame(tick); else {
+                    for (const b of beacons){ if (b.dataset.found==='0'){ b.style.background='transparent'; b.style.boxShadow='none'; } }
+                }
+            };
+            tick();
         }
 
-        function toggle(r,c){
-            const dirs = [[0,0],[1,0],[-1,0],[0,1],[0,-1]];
-            for (const [dr,dc] of dirs){
-                const nr=r+dr,nc=c+dc; if(nr<0||nc<0||nr>=size||nc>=size) continue;
-                state[nr][nc] = state[nr][nc] ? 0 : 1;
-            }
-            render();
-        }
+        scanBtn.onclick = () => {
+            if (scans<=0) return;
+            scans--; pulse(); updateProgress();
+            if (scans===0) scanBtn.disabled = true;
+        };
 
-        function checkSolved(){
-            const ok = state.every((row,r)=>row.every((v,c)=>v===target[r][c]));
-            if (ok) {
-                resultEl.innerHTML = '🎉 Solved! Flag: <code>GRID{toggle_master}</code>';
-                this.showMessage('🟩 Grid solved!', 'success');
-            } else {
-                resultEl.textContent = '';
-            }
-        }
-
-        render();
+        updateProgress();
     }
 
     // Challenge 4: Fallout-style Hacking
