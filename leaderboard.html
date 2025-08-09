@@ -6,56 +6,199 @@
   <title>Leaderboard - Tech Escape</title>
   <link rel="stylesheet" href="styles.css" />
   <style>
-    body { background:#0a0e1a; color:#fff; font-family: Inter, system-ui, Arial, sans-serif; }
-    .container { max-width:1000px; margin:40px auto; padding:16px; }
-    h1 { margin-bottom:16px; }
-    table { width:100%; border-collapse: collapse; background:#1a1f2e; border:1px solid #374151; border-radius:12px; overflow:hidden; }
-    th, td { padding:12px 14px; border-bottom:1px solid #374151; text-align:left; font-size:14px; }
-    th { background:#111827; font-weight:600; }
-    tr:last-child td { border-bottom:none; }
+    :root {
+      --bg: #0a0e1a;
+      --card: #12172a;
+      --card-2: #171c30;
+      --border: #2a3250;
+      --text: #e5e7eb;
+      --text-dim: #a5b3d6;
+      --accent: #6ee7ff;
+      --accent-2: #8b5cf6;
+      --success: #10b981;
+      --warning: #f59e0b;
+    }
+    * { box-sizing: border-box; }
+    body {
+      background: radial-gradient(1200px 600px at 20% -10%, rgba(139,92,246,.15), transparent),
+                  radial-gradient(1200px 600px at 80% 110%, rgba(110,231,255,.12), transparent),
+                  var(--bg);
+      color: var(--text);
+      font-family: Inter, system-ui, Segoe UI, Roboto, Arial, sans-serif;
+      min-height: 100vh;
+      margin: 0;
+    }
+    .container { max-width: 1100px; margin: 32px auto; padding: 16px; }
+    .header {
+      display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 16px;
+    }
+    .title { font-size: 28px; font-weight: 800; letter-spacing: .3px; }
+    .subtitle { color: var(--text-dim); font-size: 13px; }
+    .pill {
+      display: inline-flex; align-items: center; gap: 8px; padding: 6px 10px; border:1px solid var(--border);
+      border-radius: 999px; background: linear-gradient(180deg, rgba(255,255,255,.04), rgba(0,0,0,.04));
+      font-size: 12px; color: var(--text-dim);
+    }
+    .live-dot { width:8px; height:8px; border-radius:50%; background: #34d399; box-shadow: 0 0 10px #34d399aa; }
+
+    .card {
+      background: linear-gradient(180deg, rgba(255,255,255,.02), rgba(0,0,0,.06)), var(--card);
+      border: 1px solid var(--border); border-radius: 14px; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,.35);
+    }
+
+    table { width:100%; border-collapse: collapse; }
+    thead th {
+      text-align:left; font-size:12px; color: var(--text-dim); letter-spacing: .3px; text-transform: uppercase;
+      background: var(--card-2); border-bottom: 1px solid var(--border); padding: 12px 14px;
+      position: sticky; top: 0; z-index: 1;
+    }
+    tbody td { padding: 14px; border-bottom: 1px solid var(--border); font-size: 14px; }
+    tbody tr { transition: background .15s ease; }
+    tbody tr:hover { background: rgba(255,255,255,.03); }
+    tr:last-child td { border-bottom: none; }
+
     .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
+    .rank { display:flex; align-items:center; gap:8px; }
+    .medal { filter: drop-shadow(0 2px 6px rgba(0,0,0,.25)); }
+
+    .status-pill { display:inline-flex; align-items:center; gap:8px; padding:6px 10px; border-radius:999px; font-size:12px; }
+    .status-finished { background: rgba(16,185,129,.15); color:#34d399; border:1px solid rgba(16,185,129,.35); }
+    .status-progress { background: rgba(99,102,241,.15); color:#93c5fd; border:1px solid rgba(99,102,241,.35); }
+
+    .progress-wrap { display:flex; align-items:center; gap:10px; }
+    .progress-bar {
+      position: relative; height: 10px; width: 160px; border-radius: 999px; overflow: hidden;
+      background: rgba(255,255,255,.06); border:1px solid var(--border);
+    }
+    .progress-fill {
+      height: 100%; background: linear-gradient(90deg, #22d3ee, #8b5cf6); width: 0%; transition: width .5s ease;
+    }
+    .progress-text { font-size: 12px; color: var(--text-dim); min-width: 40px; }
+
+    .toolbar { display:flex; gap:10px; align-items:center; }
+    .btn { appearance: none; border:1px solid var(--border); color: var(--text); background: var(--card-2); padding:8px 12px; border-radius:8px; font-size:12px; cursor:pointer; }
+    .btn:hover { filter: brightness(1.1); }
+
+    /* Skeleton */
+    .skeleton { position: relative; overflow: hidden; background: rgba(255,255,255,.04); border-radius: 8px; height: 12px; }
+    .skeleton::after { content:''; position:absolute; inset:0; transform: translateX(-100%); background: linear-gradient(90deg, transparent, rgba(255,255,255,.06), transparent); animation: shimmer 1.4s infinite; }
+    @keyframes shimmer { 100% { transform: translateX(100%); } }
+
+    @media (max-width: 720px){
+      .title { font-size: 22px; }
+      .progress-bar { width: 120px; }
+      thead { display: none; }
+      tbody tr { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; padding: 10px 8px; }
+      tbody td { border: none; padding: 6px 8px; }
+      tbody td[data-col]:before { content: attr(data-col); display:block; color: var(--text-dim); font-size: 12px; margin-bottom: 4px; }
+    }
   </style>
   <script>
-    function fmt(ms){ if(!ms && ms!==0) return '-'; const m=Math.floor(ms/60000); const s=Math.floor((ms%60000)/1000); return `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}` }
+    const TOTAL_CHALLENGES = 6;
+    const REFRESH_MS = 5000;
+    function fmt(ms){ if(ms===0) return '00:00'; if(!ms) return '-'; const m=Math.floor(ms/60000); const s=Math.floor((ms%60000)/1000); return `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}` }
     function medal(rank){ return rank===1?'🥇':rank===2?'🥈':rank===3?'🥉':'' }
-    async function loadBoard(){
-      const res = await fetch('/api/leaderboard');
-      const data = await res.json();
+    function statusPill(row){
+      const finished = !!row.finished_at; const cls = finished?'status-finished':'status-progress';
+      const text = finished?'Finished':'In Progress';
+      return `<span class="status-pill ${cls}">${finished?'✅':'⏳'} ${text}</span>`
+    }
+    function progressCell(count){
+      const pct = Math.max(0, Math.min(100, Math.round((Number(count||0)/TOTAL_CHALLENGES)*100)));
+      return `<div class="progress-wrap">
+        <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>
+        <span class="progress-text mono">${Number(count||0)}/${TOTAL_CHALLENGES}</span>
+      </div>`
+    }
+    function setLastUpdated(){ const el=document.getElementById('lastUpdated'); const t=new Date(); el.textContent = `Updated ${t.toLocaleTimeString()}`; }
+    function setCountdown(sec){ const el=document.getElementById('refreshBadge'); el.textContent = `Auto refresh in ${sec}s`; }
+
+    function renderSkeleton(){
       const tbody = document.getElementById('tbody');
       tbody.innerHTML = '';
-      if(!data.success){ tbody.innerHTML = `<tr><td colspan="5">Failed to load leaderboard</td></tr>`; return; }
-      for(const row of data.leaderboard){
+      for(let i=0;i<6;i++){
         const tr = document.createElement('tr');
         tr.innerHTML = `
-          <td class="mono">#${row.rank} <span aria-hidden="true">${medal(row.rank)}</span></td>
-          <td>${row.teamname || row.team_id}</td>
-          <td class="mono">${row.completed_count}</td>
-          <td class="mono">${fmt(row.total_time_ms)}</td>
-          <td class="mono">${row.finished_at ? 'Finished' : 'In Progress'}</td>
+          <td data-col="Rank"><div class="skeleton" style="width:60px"></div></td>
+          <td data-col="Team"><div class="skeleton" style="width:140px"></div></td>
+          <td data-col="Challenges">${progressCell(0)}</td>
+          <td data-col="Total Time"><div class="skeleton" style="width:70px"></div></td>
+          <td data-col="Status"><div class="skeleton" style="width:100px"></div></td>
         `;
         tbody.appendChild(tr);
       }
     }
-    window.addEventListener('DOMContentLoaded', () => { loadBoard(); setInterval(loadBoard, 5000); });
+
+    async function loadBoard(){
+      try{
+        const res = await fetch('/api/leaderboard');
+        const data = await res.json();
+        const tbody = document.getElementById('tbody');
+        tbody.innerHTML = '';
+        if(!data.success){ tbody.innerHTML = `<tr><td colspan="5">Failed to load leaderboard</td></tr>`; return; }
+        for(const row of data.leaderboard){
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td data-col="Rank" class="mono"><span class="rank">#${row.rank} <span class="medal" aria-hidden="true">${medal(row.rank)}</span></span></td>
+            <td data-col="Team">${row.teamname || row.team_id}</td>
+            <td data-col="Challenges">${progressCell(row.completed_count)}</td>
+            <td data-col="Total Time" class="mono">${fmt(row.total_time_ms)}</td>
+            <td data-col="Status">${statusPill(row)}</td>
+          `;
+          tbody.appendChild(tr);
+        }
+        setLastUpdated();
+      } catch(e){
+        const tbody = document.getElementById('tbody');
+        tbody.innerHTML = `<tr><td colspan="5">Failed to load leaderboard</td></tr>`;
+      }
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      renderSkeleton();
+      loadBoard();
+      setLastUpdated();
+      let left = Math.floor(REFRESH_MS/1000);
+      setCountdown(left);
+      setInterval(() => { left = left<=1 ? Math.floor(REFRESH_MS/1000) : left-1; setCountdown(left); }, 1000);
+      setInterval(loadBoard, REFRESH_MS);
+      document.getElementById('refreshBtn').addEventListener('click', () => { left = Math.floor(REFRESH_MS/1000); setCountdown(left); renderSkeleton(); loadBoard(); });
+    });
   </script>
+  <meta name="theme-color" content="#0a0e1a" />
+  <link rel="icon" href="ieee-logo.webp" />
 </head>
 <body>
   <div class="container">
-    <h1>Leaderboard</h1>
-    <table>
-      <thead>
-        <tr>
-          <th>Rank</th>
-          <th>Team</th>
-          <th>Challenges</th>
-          <th>Total Time</th>
-          <th>Status</th>
-        </tr>
-      </thead>
-      <tbody id="tbody">
-        <tr><td colspan="5">Loading…</td></tr>
-      </tbody>
-    </table>
+    <div class="header">
+      <div>
+        <div class="title">Leaderboard</div>
+        <div class="subtitle">Top teams by challenges solved and total time</div>
+      </div>
+      <div class="toolbar">
+        <span class="pill"><span class="live-dot"></span> Live</span>
+        <span id="refreshBadge" class="pill">Auto refresh in 5s</span>
+        <span id="lastUpdated" class="pill">Updated --:--:--</span>
+        <button id="refreshBtn" class="btn">Refresh Now</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <table>
+        <thead>
+          <tr>
+            <th>Rank</th>
+            <th>Team</th>
+            <th>Challenges</th>
+            <th>Total Time</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody id="tbody">
+          <tr><td colspan="5" style="padding:16px">Loading…</td></tr>
+        </tbody>
+      </table>
+    </div>
   </div>
 </body>
 </html>
