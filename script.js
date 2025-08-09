@@ -1365,21 +1365,34 @@ _____
 
     // Handle IEEE logo click
     handleIeeeLogoClick() {
-        // Get the flag from the data attribute
+        // Only reveal on the first riddle while in the game interface
+        const gameContainer = document.getElementById('gameContainer');
+        const isInGame = !!(gameContainer && !gameContainer.classList.contains('hidden'));
+        const isFirstRiddle = this.currentRiddle === 0;
+
+        if (!isInGame || !isFirstRiddle) {
+            this.showMessage('🔍 Keep looking! The logo might be useful later...', 'info');
+            return;
+        }
+
+        // Reveal flag once per session
+        if (this._logoFlagShown) {
+            this.showMessage('✅ Already discovered. Solve the challenge to proceed!', 'info');
+            return;
+        }
+
         const ieeeLogo = document.querySelector('.ieee-logo');
         const flag = ieeeLogo ? ieeeLogo.getAttribute('data-flag') : null;
-        
-        if (flag) {
-            // Show a message with the flag
-            this.showMessage(`🎯 You found a hidden flag: ${flag}`, 'success');
-            
-            // Also log to console for debugging
-            console.log('%c🎯 IEEE Logo Clicked!', 'color: #00ff00; font-size: 16px; font-weight: bold;');
-            console.log('%c🏁 Flag found:', 'color: #ffaa00; font-size: 14px;');
-            console.log(`%c${flag}`, 'color: #ffaa00; font-size: 16px; font-weight: bold;');
-        } else {
+        if (!flag) {
             this.showMessage('🔍 Keep looking! The flag might be hidden elsewhere...', 'info');
+            return;
         }
+
+        this._logoFlagShown = true;
+        this.showMessage(`🎯 You found a hidden flag: ${flag}`, 'success');
+        console.log('%c🎯 IEEE Logo Clicked!', 'color: #00ff00; font-size: 16px; font-weight: bold;');
+        console.log('%c🏁 Flag found:', 'color: #ffaa00; font-size: 14px;');
+        console.log(`%c${flag}`, 'color: #ffaa00; font-size: 16px; font-weight: bold;');
     }
 
     // === CHALLENGE SETUP FUNCTIONS ===
