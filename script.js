@@ -1169,7 +1169,7 @@ class TechEscapeGame {
         if (this._lastWarnAt && now - this._lastWarnAt < 8000) return; // throttle 8s
         this._lastWarnAt = now;
         this.playAttentionBeep();
-        this.speakWarning('Please stay on the game tab. Your team will be disqualified if you go out.');
+        this.speakWarning('Please stay on the page. Your team will be disqualified if you go out.');
     }
 
     playAttentionBeep() {
