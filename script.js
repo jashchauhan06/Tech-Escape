@@ -915,10 +915,36 @@ class TechEscapeGame {
                 prevBtn.style.display = 'none';
             }
         }
-        // Ensure Next button returns to saved or next challenge without requiring re-solve
-        const answerForm = document.getElementById('answerForm');
-        if (answerForm) {
-            answerForm.addEventListener('submit', (e) => e.preventDefault());
+        // Create/Update a Continue button to jump back to last unlocked challenge
+        const unlockedMax = this.getUnlockedMaxIndex();
+        const navParent = prevBtn ? prevBtn.parentElement : null;
+        let contBtn = document.getElementById('continueBtn');
+        if (navParent) {
+            if (!contBtn) {
+                contBtn = document.createElement('button');
+                contBtn.id = 'continueBtn';
+                contBtn.textContent = 'Continue';
+                contBtn.style.marginLeft = '8px';
+                contBtn.className = prevBtn.className || '';
+                navParent.appendChild(contBtn);
+            }
+            contBtn.onclick = () => {
+                const idx = this.getUnlockedMaxIndex();
+                if (idx !== null && idx >= 0) {
+                    this.jumpToChallenge(idx);
+                }
+            };
+            if (unlockedMax !== null && unlockedMax > this.currentRiddle) {
+                contBtn.style.display = 'flex';
+                contBtn.textContent = 'Continue';
+            } else if (unlockedMax !== null && unlockedMax === this.currentRiddle && this.currentRiddle < this.riddles.length - 1) {
+                // Optionally allow jump to next unsolved
+                contBtn.style.display = 'flex';
+                contBtn.textContent = 'Next';
+                contBtn.onclick = () => this.jumpToChallenge(this.currentRiddle + 1);
+            } else {
+                contBtn.style.display = 'none';
+            }
         }
     }
 
@@ -942,6 +968,16 @@ class TechEscapeGame {
         try { localStorage.setItem('te_currRiddle', String(this.currentRiddle)); } catch {}
         this.loadCurrentRiddle();
         this.updateProgressDisplay();
+    }
+
+    // Compute the highest unlocked challenge index based on stored progress
+    getUnlockedMaxIndex() {
+        try {
+            const savedIdxRaw = localStorage.getItem('te_currRiddle');
+            const idx = savedIdxRaw ? parseInt(savedIdxRaw, 10) : NaN;
+            if (!Number.isNaN(idx)) return Math.max(0, Math.min(idx, this.riddles.length - 1));
+        } catch {}
+        return this.currentRiddle || 0;
     }
 
     // Wait for DOM elements to be ready
