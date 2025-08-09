@@ -621,7 +621,7 @@ _____
                 },
                 registeredAt: data.team.registeredAt || new Date().toISOString()
             };
-            this.showMessage('Welcome back! Loading your progress...', 'success');
+            this.showMessage('Welcome to Tech Escape!', 'success');
             setTimeout(() => {
                 this.showGameInterface();
                 this.loadGameProgress();
