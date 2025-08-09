@@ -670,7 +670,9 @@ class TechEscapeGame {
                 },
                 registeredAt: data.team.registeredAt || new Date().toISOString()
             };
-            this.showMessage('Welcome to Tech Escape!', 'success');
+            // Persist session locally so refresh keeps you logged in
+            try { localStorage.setItem('techEscapeTeam', JSON.stringify(this.currentTeam)); } catch {}
+            this.showMessage('Welcome back! Loading your progress...', 'success');
             setTimeout(() => {
                 this.showGameInterface();
                 this.loadGameProgress();
@@ -712,8 +714,8 @@ class TechEscapeGame {
             const data = await resp.json();
             if (!resp.ok || !data.success) {
                 this.showMessage(data.error || 'Registration failed. Please try again.', 'error');
-                return;
-            }
+            return;
+        }
 
             // Registration successful — require login instead of starting game
             this.showMessage(`Team \"${teamName}\" registered successfully! Please login to start.`, 'success');
@@ -1004,7 +1006,7 @@ class TechEscapeGame {
                     });
                 }
             } catch {}
-
+            
             this.currentRiddle++;
             try { localStorage.setItem('te_currRiddle', String(this.currentRiddle)); } catch {}
             this.saveGameProgress();
@@ -1364,12 +1366,12 @@ class TechEscapeGame {
         const ieeeLogo = document.querySelector('.ieee-logo');
         const flag = ieeeLogo ? ieeeLogo.getAttribute('data-flag') : null;
         if (!flag) return;
-
+        
         this._logoFlagShown = true;
-        this.showMessage(`🎯 You found a hidden flag: ${flag}`, 'success');
-        console.log('%c🎯 IEEE Logo Clicked!', 'color: #00ff00; font-size: 16px; font-weight: bold;');
-        console.log('%c🏁 Flag found:', 'color: #ffaa00; font-size: 14px;');
-        console.log(`%c${flag}`, 'color: #ffaa00; font-size: 16px; font-weight: bold;');
+            this.showMessage(`🎯 You found a hidden flag: ${flag}`, 'success');
+            console.log('%c🎯 IEEE Logo Clicked!', 'color: #00ff00; font-size: 16px; font-weight: bold;');
+            console.log('%c🏁 Flag found:', 'color: #ffaa00; font-size: 14px;');
+            console.log(`%c${flag}`, 'color: #ffaa00; font-size: 16px; font-weight: bold;');
     }
 
     // === CHALLENGE SETUP FUNCTIONS ===
