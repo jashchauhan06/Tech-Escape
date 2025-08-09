@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Leaderboard - Tech Escape</title>
+  <link rel="stylesheet" href="styles.css" />
+  <style>
+    body { background:#0a0e1a; color:#fff; font-family: Inter, system-ui, Arial, sans-serif; }
+    .container { max-width:1000px; margin:40px auto; padding:16px; }
+    h1 { margin-bottom:16px; }
+    table { width:100%; border-collapse: collapse; background:#1a1f2e; border:1px solid #374151; border-radius:12px; overflow:hidden; }
+    th, td { padding:12px 14px; border-bottom:1px solid #374151; text-align:left; font-size:14px; }
+    th { background:#111827; font-weight:600; }
+    tr:last-child td { border-bottom:none; }
+    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
+  </style>
+  <script>
+    function fmt(ms){ if(!ms && ms!==0) return '-'; const m=Math.floor(ms/60000); const s=Math.floor((ms%60000)/1000); return `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}` }
+    async function loadBoard(){
+      const res = await fetch('/api/leaderboard');
+      const data = await res.json();
+      const tbody = document.getElementById('tbody');
+      tbody.innerHTML = '';
+      if(!data.success){ tbody.innerHTML = `<tr><td colspan="5">Failed to load leaderboard</td></tr>`; return; }
+      for(const row of data.leaderboard){
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td class="mono">#${row.rank}</td>
+          <td>${row.teamname || row.team_id}</td>
+          <td class="mono">${row.completed_count}</td>
+          <td class="mono">${fmt(row.total_time_ms)}</td>
+          <td class="mono">${row.finished_at ? 'Finished' : 'In Progress'}</td>
+        `;
+        tbody.appendChild(tr);
+      }
+    }
+    window.addEventListener('DOMContentLoaded', () => { loadBoard(); setInterval(loadBoard, 5000); });
+  </script>
+</head>
+<body>
+  <div class="container">
+    <h1>Leaderboard</h1>
+    <table>
+      <thead>
+        <tr>
+          <th>Rank</th>
+          <th>Team</th>
+          <th>Challenges</th>
+          <th>Total Time</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody id="tbody">
+        <tr><td colspan="5">Loading…</td></tr>
+      </tbody>
+    </table>
+  </div>
+</body>
+</html>
+
+

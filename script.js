@@ -586,7 +586,7 @@ _____
                 banner.innerText = text;
             }
             if (!data.started) {
-                ensureBanner('⏳ Event has not started yet. Please wait for the admin.');
+                ensureBanner('⏳ Event has not started yet. Please wait for the admin to start the event.');
                 if (this.timerInterval) { clearInterval(this.timerInterval); this.timerInterval = null; }
                 this.setFrozenUI(false);
             } else if (data.paused) {
@@ -821,7 +821,7 @@ _____
         const gate = document.getElementById('game-status-banner');
         const isBlocked = gate && gate.textContent.includes('not started');
         if (isBlocked) {
-            this.showMessage('⏳ Event has not started yet. Please wait for the admin.', 'warning');
+            this.showMessage('⏳ Event has not started yet. Please wait for the admin to start the event.', 'warning');
             return;
         }
         if (authContainer) authContainer.classList.add('hidden');
@@ -852,6 +852,21 @@ _____
     initializeGameProgress() {
         this.currentRiddle = 0;
         this.hintsUsed = 0;
+        // Initialize progress row
+        try {
+            if (this.currentTeam) {
+                fetch('/api/progress', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        teamId: this.currentTeam.id,
+                        teamname: this.currentTeam.name,
+                        deltaMs: 0,
+                        completedCount: 0
+                    })
+                });
+            }
+        } catch {}
         
         setTimeout(() => {
             this.updateProgressDisplay();
@@ -993,6 +1008,24 @@ _____
             
             window.popupManager.showPopup('success');
             
+            // Track time delta for leaderboard
+            const deltaMs = 2000; // approximate step; real timing handled via startTime/endTime if needed
+            try {
+                if (this.currentTeam) {
+                    fetch('/api/progress', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            teamId: this.currentTeam.id,
+                            teamname: this.currentTeam.name,
+                            deltaMs,
+                            completedCount: Math.min(this.currentRiddle + 1, this.riddles.length),
+                            finished: this.currentRiddle + 1 >= this.riddles.length
+                        })
+                    });
+                }
+            } catch {}
+
             this.currentRiddle++;
             this.saveGameProgress();
 
