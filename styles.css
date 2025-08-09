@@ -135,30 +135,31 @@ body {
     gap: 1rem;
 }
 
+/* Transform IEEE button into a large logo badge without text */
 .ieee-logo {
-    display: flex;
+    display: inline-flex;
     align-items: center;
-    gap: 0.5rem;
-    background: var(--gradient-primary);
-    padding: 0.75rem 1rem;
-    border-radius: 0.5rem;
-    font-weight: 600;
-    font-size: 1rem;
+    justify-content: center;
+    background: var(--bg-secondary);
+    border: 2px solid var(--border-color);
+    padding: 0.25rem;
+    border-radius: 0.75rem;
     cursor: pointer;
-    transition: all 0.3s ease;
+    transition: all 0.25s ease;
     position: relative;
 }
 
-.ieee-logo-img {
-    width: 1.5rem;
-    height: 1.5rem;
+.ieee-logo img,
+.ieee-logo .ieee-logo-img {
+    width: 140px;   /* big logo */
+    height: 48px;
     object-fit: contain;
+    display: block;
 }
 
-.ieee-logo:hover {
-    transform: scale(1.05);
-    filter: brightness(1.2);
-}
+.ieee-logo span { display: none; }
+
+.ieee-logo:hover { transform: scale(1.02); filter: brightness(1.1); }
 
 
 
