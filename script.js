@@ -909,6 +909,12 @@ class TechEscapeGame {
                 this.remoteCompletedCount = 0;
                 this.currentRiddle = 0;
             }
+            // Fetch persistent per-team hint usage and apply it
+            const hintRes = await fetch(`/api/team-state?teamId=${encodeURIComponent(this.currentTeam.id)}`);
+            const hintData = await hintRes.json();
+            if (hintData && hintData.success && hintData.state) {
+                this.hintsUsed = Math.max(0, Number(hintData.state.hintsUsed) || 0);
+            }
         } catch {
             // Network error: fall back to current state
         }
@@ -1308,6 +1314,16 @@ class TechEscapeGame {
         this.hintsUsed++;
         this.updateHintsDisplay();
         this.saveGameProgress();
+        // Persist hintsUsed server-side so refresh doesn't reset
+        try {
+            if (this.currentTeam) {
+                fetch('/api/team-state', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ teamId: this.currentTeam.id, hintsUsed: this.hintsUsed })
+                });
+            }
+        } catch {}
 
         // Array of random hints
         const randomHints = [
@@ -1539,6 +1555,12 @@ class TechEscapeGame {
                     completedCount: Math.min(this.currentRiddle, this.riddles.length),
                     finished: this.currentRiddle >= this.riddles.length
                 })
+            });
+            // Also persist hintsUsed into teams.progress JSON
+            fetch('/api/team-state', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ teamId: this.currentTeam.id, hintsUsed: this.hintsUsed })
             });
         } catch {}
     }
