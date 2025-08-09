@@ -20,6 +20,7 @@ export default function Home() {
   } = useGameState()
 
   const [apiStatus, setApiStatus] = useState('')
+  const [supabaseStatus, setSupabaseStatus] = useState('')
 
   const testAPI = async () => {
     try {
@@ -27,7 +28,22 @@ export default function Home() {
       const data = await response.json()
       setApiStatus(`✅ API Test: ${data.message}`)
     } catch (error) {
-      setApiStatus(`❌ API Test Failed: ${error.message}`)
+      setApiStatus(`❌ API Test Failed: ${(error as Error).message}`)
+    }
+  }
+
+  const testSupabase = async () => {
+    try {
+      setSupabaseStatus('Testing…')
+      const response = await fetch('/api/test-supabase')
+      const data = await response.json()
+      if (data.success) {
+        setSupabaseStatus('✅ Supabase connection successful')
+      } else {
+        setSupabaseStatus(`❌ Supabase failed: ${data.error || data.message}`)
+      }
+    } catch (error) {
+      setSupabaseStatus(`❌ Supabase test error: ${(error as Error).message}`)
     }
   }
 
@@ -47,7 +63,7 @@ export default function Home() {
       {/* Connection Status */}
       <ConnectionStatus />
 
-      {/* API Test Button - Updated for deployment */}
+      {/* Test Buttons - API and Supabase */}
       <div className="fixed top-20 right-4 z-50">
         <button 
           onClick={testAPI}
@@ -55,9 +71,20 @@ export default function Home() {
         >
           Test API (v2)
         </button>
+        <button
+          onClick={testSupabase}
+          className="ml-2 bg-green-600 text-white px-4 py-2 rounded-lg text-sm"
+        >
+          Test Supabase
+        </button>
         {apiStatus && (
           <div className="mt-2 bg-gray-800 text-white px-3 py-2 rounded text-xs">
             {apiStatus}
+          </div>
+        )}
+        {supabaseStatus && (
+          <div className="mt-2 bg-gray-800 text-white px-3 py-2 rounded text-xs">
+            {supabaseStatus}
           </div>
         )}
       </div>
