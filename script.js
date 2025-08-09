@@ -925,6 +925,11 @@ class TechEscapeGame {
             riddleNumberEl.textContent = this.currentRiddle + 1;
         }
 
+        // Always clear transient overlays from previous challenges
+        if (typeof this.removePageHuntArtifacts === 'function') {
+            this.removePageHuntArtifacts();
+        }
+
         if (riddleQuestionEl) {
             riddleQuestionEl.innerHTML = riddle.question;
         }
@@ -950,6 +955,16 @@ class TechEscapeGame {
         
         // Update progress
         this.updateProgressDisplay();
+    }
+
+    // Remove global artifacts created by hidden-object hunts (e.g., challenge 3)
+    removePageHuntArtifacts() {
+        try {
+            const mag = document.getElementById('global-magnifier');
+            if (mag && mag.parentNode) mag.parentNode.removeChild(mag);
+            const marks = document.querySelectorAll('.page-hunt-mark');
+            marks.forEach((el) => el.parentNode && el.parentNode.removeChild(el));
+        } catch {}
     }
 
     // Handle answer submission
@@ -1491,6 +1506,7 @@ class TechEscapeGame {
             m.style.zIndex='1500';
             m.title='';
             m.dataset.found='0';
+            m.className = 'page-hunt-mark';
             // Hover glow still works
             m.onmouseenter=()=>{ if(m.dataset.found==='0'){ m.style.boxShadow='0 0 6px rgba(99,102,241,.5)'; } };
             m.onmouseleave=()=>{ if(m.dataset.found==='0'){ m.style.boxShadow='none'; } };
