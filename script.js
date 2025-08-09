@@ -625,7 +625,7 @@ _____
     }
 
     // Handle registration
-    handleRegister(e) {
+    async handleRegister(e) {
         e.preventDefault();
         
         const teamName = document.getElementById('newTeamName')?.value?.trim();
@@ -639,39 +639,57 @@ _____
             return;
         }
 
-        // Check if team name already exists
-        if (this.teams.find(t => t.name.toLowerCase() === teamName.toLowerCase())) {
-            this.showMessage('Team name already exists. Please choose a different name.', 'error');
-            return;
+        // Write-through to serverless API (Supabase)
+        try {
+            const resp = await fetch('/api/register-team', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    teamName,
+                    teamLeader,
+                    email,
+                    password,
+                    teamSize
+                })
+            });
+            const data = await resp.json();
+            if (!resp.ok || !data.success) {
+                this.showMessage(data.error || 'Registration failed. Please try again.', 'error');
+                return;
+            }
+
+            const newTeam = {
+                // Use Supabase row id if present; else fallback to timestamp
+                id: data.team?.id || Date.now(),
+                name: teamName,
+                leader: teamLeader,
+                email,
+                password,
+                size: teamSize,
+                progress: {
+                    currentRiddle: 0,
+                    hintsUsed: 0,
+                    startTime: new Date().toISOString(),
+                    completedRiddles: []
+                },
+                registeredAt: new Date().toISOString()
+            };
+
+            // Keep local cache for gameplay
+            this.teams.push(newTeam);
+            this.saveTeams();
+            this.currentTeam = newTeam;
+            localStorage.setItem('techEscapeTeam', JSON.stringify(newTeam));
+
+            this.showMessage(`Team "${teamName}" registered successfully! Welcome to Tech Escape!`, 'success');
+            setTimeout(() => {
+                this.showGameInterface();
+                this.initializeGameProgress();
+            }, 1500);
+        } catch (err) {
+            console.error('Register error:', err);
+            this.showMessage('Registration failed due to a network error.', 'error');
         }
-
-        // Create new team
-        const newTeam = {
-            id: Date.now(),
-            name: teamName,
-            leader: teamLeader,
-            email: email,
-            password: password,
-            size: teamSize,
-            progress: {
-                currentRiddle: 0,
-                hintsUsed: 0,
-                startTime: new Date().toISOString(),
-                completedRiddles: []
-            },
-            registeredAt: new Date().toISOString()
-        };
-
-        this.teams.push(newTeam);
-        this.saveTeams();
-        this.currentTeam = newTeam;
-        localStorage.setItem('techEscapeTeam', JSON.stringify(newTeam));
-
-        this.showMessage(`Team "${teamName}" registered successfully! Welcome to Tech Escape!`, 'success');
-        setTimeout(() => {
-            this.showGameInterface();
-            this.initializeGameProgress();
-        }, 1500);
     }
 
     // Show/hide forms
