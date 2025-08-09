@@ -199,7 +199,7 @@ class TechEscapeGame {
                 id: 1,
                            question: `
                <h4>🔍 Hidden Flag Challenge</h4>
-               <p>Your first challenge is to find the hidden flag! Look carefully around this interface...</p>
+               <p>Your first challenge is to find the hidden flag! Look carefully around...</p>
                <div class="hidden-flag-challenge">
                    <div class="challenge-instructions">
                        <p><strong>Riddle:</strong></p>
@@ -229,32 +229,21 @@ class TechEscapeGame {
             {
                 id: 2,
                 question: `
-                    <h4>🧮 Binary & Hex Challenge</h4>
-                    <p>Solve these number system conversions manually:</p>
-                    <div class="conversion-challenge">
-                        <div class="conversion-problems">
-                            <div class="problem">
-                                <p><strong>1.</strong> Convert binary <code>11010110</code> to decimal:</p>
-                                <input type="number" class="conversion-input" id="prob1" placeholder="Decimal answer">
-                            </div>
-                            <div class="problem">
-                                <p><strong>2.</strong> Convert hexadecimal <code>2F</code> to decimal:</p>
-                                <input type="number" class="conversion-input" id="prob2" placeholder="Decimal answer">
-                            </div>
-                            <div class="problem">
-                                <p><strong>3.</strong> Convert decimal <code>85</code> to binary (8-bit):</p>
-                                <input type="text" class="conversion-input" id="prob3" placeholder="Binary answer">
-                            </div>
-                        </div>
-                        <div class="conversion-result" id="conversionResult" style="display:none;">
-                            <p>🎉 All correct! <strong>Flag:</strong> <code>CONVERT{214_47_01010101}</code></p>
-                        </div>
+                    <h4>📻 Beep Beep Decode</h4>
+                    <p>Listen to the beeps and decode the hidden message. Dots and dashes follow Morse timing. Then type the decoded phrase.</p>
+                    <div style="display:flex;align-items:center;gap:12px;margin:10px 0;">
+                        <button id="morsePlay" class="btn btn-primary">▶️ Play</button>
+                        <div id="morseLed" style="width:14px;height:14px;border-radius:50%;background:#374151;border:1px solid #4b5563;"></div>
                     </div>
-                    <p><strong>Solve all three to get the flag:</strong></p>
+                    <div style="margin:8px 0;">
+                        <input id="morseInput" type="text" placeholder="Decoded message" class="conversion-input" style="width:100%;padding:10px;border-radius:8px;background:var(--bg-tertiary);border:1px solid var(--border-color);color:var(--text-primary);" />
+                    </div>
+                    <button id="morseCheck" class="btn btn-primary">Check</button>
+                    <div id="morseResult" style="margin-top:10px;color:var(--text-secondary)"></div>
                 `,
-                answer: 'CONVERT{214_47_01010101}',
-                hint: 'Do you really expect a shortcut on this level?',
-                explanation: '11010110₂ = 214₁₀, 2F₁₆ = 47₁₀, 85₁₀ = 01010101₂',
+                answer: 'AUDIO{radio_signal_unlocked}',
+                hint: 'Short beep = dot, long beep = dash. Listen to spacing.',
+                explanation: 'Standard Morse timing.',
                 interactive: true,
                 setupFunction: 'setupChallenge2'
             },
@@ -1407,77 +1396,259 @@ _____
 
     // Challenge 2: Number System Conversion
     setupChallenge2() {
-        const inputs = ['prob1', 'prob2', 'prob3'];
-        const answers = ['214', '47', '01010101'];
-        
-        inputs.forEach(inputId => {
-            const input = document.getElementById(inputId);
-            if (input) {
-                input.addEventListener('input', () => {
-                    this.checkConversionAnswers(inputs, answers, 'conversionResult');
-                });
+        // Build a simple Morse playback and check
+        const playBtn = document.getElementById('morsePlay');
+        const led = document.getElementById('morseLed');
+        const input = document.getElementById('morseInput');
+        const check = document.getElementById('morseCheck');
+        const out = document.getElementById('morseResult');
+
+        if (!playBtn || !led || !input || !check || !out) return;
+
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const dit = 120; // base unit ms
+        const dah = dit * 3;
+        const gap = dit; // between elements
+        const letterGap = dit * 3;
+        const wordGap = dit * 7;
+
+        // Encode a short phrase; final answer is a flag prompt
+        const phrase = 'radio signal unlocked';
+        const MORSE = {
+            'a': '.-', 'b': '-...', 'c': '-.-.', 'd': '-..', 'e': '.', 'f': '..-.', 'g': '--.', 'h': '....', 'i': '..', 'j': '.---', 'k': '-.-', 'l': '.-..', 'm': '--', 'n': '-.', 'o': '---', 'p': '.--.', 'q': '--.-', 'r': '.-.', 's': '...', 't': '-', 'u': '..-', 'v': '...-', 'w': '.--', 'x': '-..-', 'y': '-.--', 'z': '--..', ' ': ' '
+        };
+
+        function sleep(ms){ return new Promise(r=>setTimeout(r, ms)); }
+
+        async function beep(ms){
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.frequency.value = 600;
+            gain.gain.value = 0.0001;
+            osc.connect(gain); gain.connect(ctx.destination);
+            osc.start();
+            gain.gain.exponentialRampToValueAtTime(0.2, ctx.currentTime + 0.01);
+            led.style.background = '#10b981';
+            await sleep(ms);
+            gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.01);
+            led.style.background = '#374151';
+            osc.stop(ctx.currentTime + 0.03);
+        }
+
+        playBtn.onclick = async () => {
+            playBtn.disabled = true;
+            out.textContent = 'Playing...';
+            for (const ch of phrase) {
+                if (ch === ' ') { await sleep(wordGap); continue; }
+                const code = MORSE[ch] || '';
+                for (let i=0;i<code.length;i++){
+                    const c = code[i];
+                    await beep(c === '.' ? dit : dah);
+                    await sleep(i===code.length-1 ? 0 : gap);
+                }
+                await sleep(letterGap);
             }
-        });
+            out.textContent = 'Done. Decode and type the phrase to get the flag.';
+            playBtn.disabled = false;
+        };
+
+        check.onclick = () => {
+            const val = (input.value || '').toLowerCase().trim();
+            if (val === phrase) {
+                out.innerHTML = '🎉 Correct! Flag: <code>AUDIO{radio_signal_unlocked}</code>';
+                this.showMessage('🎧 Audio decoded!', 'success');
+            } else {
+                out.textContent = '❌ Not quite. Listen again.';
+            }
+        };
     }
 
-    // Challenge 3: Programming Logic
+    // Challenge 3: Lights Out
     setupChallenge3() {
-        const inputs = ['prog1', 'prog2', 'prog3'];
-        const answers = ['11', 'else', '5'];
-        
-        inputs.forEach(inputId => {
-            const input = document.getElementById(inputId);
-            if (input) {
-                input.addEventListener('input', () => {
-                    this.checkProgAnswers(inputs, answers, 'progResult');
-                });
+        const gridEl = document.getElementById('lightsGrid');
+        const resultEl = document.getElementById('lightsResult');
+        if (!gridEl || !resultEl) return;
+
+        const size = 5;
+        const state = Array.from({ length: size }, () => Array(size).fill(0));
+        // Target pattern (parity): simple cross solution
+        const target = [
+            [0,1,0,1,0],
+            [1,0,1,0,1],
+            [0,1,1,1,0],
+            [1,0,1,0,1],
+            [0,1,0,1,0],
+        ];
+
+        function render() {
+            gridEl.innerHTML = '';
+            for (let r=0;r<size;r++){
+                for (let c=0;c<size;c++){
+                    const btn = document.createElement('button');
+                    btn.style.width='40px';btn.style.height='40px';btn.style.borderRadius='6px';
+                    btn.style.border='1px solid var(--border-color)';
+                    btn.style.background = state[r][c] ? '#10b981' : 'var(--bg-tertiary)';
+                    btn.onclick = () => toggle(r,c);
+                    gridEl.appendChild(btn);
+                }
             }
-        });
+            checkSolved();
+        }
+
+        function toggle(r,c){
+            const dirs = [[0,0],[1,0],[-1,0],[0,1],[0,-1]];
+            for (const [dr,dc] of dirs){
+                const nr=r+dr,nc=c+dc; if(nr<0||nc<0||nr>=size||nc>=size) continue;
+                state[nr][nc] = state[nr][nc] ? 0 : 1;
+            }
+            render();
+        }
+
+        function checkSolved(){
+            const ok = state.every((row,r)=>row.every((v,c)=>v===target[r][c]));
+            if (ok) {
+                resultEl.innerHTML = '🎉 Solved! Flag: <code>GRID{toggle_master}</code>';
+                this.showMessage('🟩 Grid solved!', 'success');
+            } else {
+                resultEl.textContent = '';
+            }
+        }
+
+        render();
     }
 
-    // Challenge 4: Electrical Engineering
+    // Challenge 4: Fallout-style Hacking
     setupChallenge4() {
-        const inputs = ['circ1', 'circ2', 'circ3'];
-        const answers = ['4.8', '3', '20'];
-        
-        inputs.forEach(inputId => {
-            const input = document.getElementById(inputId);
-            if (input) {
-                input.addEventListener('input', () => {
-                    this.checkCircuitAnswers(inputs, answers, 'circuitResult');
-                });
-            }
-        });
+        const wordsEl = document.getElementById('hackWords');
+        const infoEl = document.getElementById('hackInfo');
+        if (!wordsEl || !infoEl) return;
+
+        const WORDS = ['NEBULA','ROCKET','PLASMA','PHOTON','QUARKS','GALAXY','ASTERO','IONIZE','ORBITA','PULSAR','COSMIC','MODULE','WARPED','SYSTEM','VECTOR','BINARY'];
+        const secret = WORDS[Math.floor(Math.random()*WORDS.length)];
+        let attempts = 6;
+
+        function likeness(a,b){
+            let k=0; for(let i=0;i<Math.min(a.length,b.length);i++){ if(a[i]===b[i]) k++; } return k;
+        }
+
+        wordsEl.innerHTML = '';
+        for (const w of WORDS){
+            const li = document.createElement('li');
+            const btn = document.createElement('button');
+            btn.textContent = w; btn.className='mono';
+            btn.style.padding='8px'; btn.style.border='1px solid var(--border-color)'; btn.style.borderRadius='6px';
+            btn.onclick = () => {
+                if (attempts<=0) return;
+                if (w === secret){
+                    infoEl.innerHTML = 'ACCESS GRANTED → Flag: <code>HACK{likeness_4_of_7}</code>';
+                    return;
+                }
+                attempts--;
+                infoEl.textContent = `Likeness: ${likeness(w,secret)} | Attempts left: ${attempts}`;
+                if (attempts===0){ infoEl.textContent += ' | Locked. Try again in a bit.'; }
+            };
+            li.appendChild(btn); wordsEl.appendChild(li);
+        }
     }
 
-    // Challenge 5: Cybersecurity
+    // Challenge 5: Cipher Cascade
     setupChallenge5() {
-        const inputs = ['sec1', 'sec2', 'sec3'];
-        const answers = ['tech escape', '443', 'database'];
-        
-        inputs.forEach(inputId => {
-            const input = document.getElementById(inputId);
-            if (input) {
-                input.addEventListener('input', () => {
-                    this.checkSecurityAnswers(inputs, answers, 'securityResult');
-                });
-            }
+        const b64El = document.getElementById('b64Src');
+        const s1 = document.getElementById('step1');
+        const s2 = document.getElementById('step2');
+        const s3 = document.getElementById('step3');
+        const btn = document.getElementById('cascadeBtn');
+        const res = document.getElementById('cascadeResult');
+        if (!b64El || !s1 || !s2 || !s3 || !btn || !res) return;
+
+        const final = 'CRYPTO{layer_cake_done}';
+        const day = new Date().getDate();
+        const rot13 = (str)=>str.replace(/[a-zA-Z]/g,c=>{
+            const base=c<='Z'?65:97; return String.fromCharCode(((c.charCodeAt(0)-base+13)%26)+base);
         });
+        const caesar=(str,shift)=>str.replace(/[a-zA-Z]/g,c=>{
+            const base=c<='Z'?65:97; return String.fromCharCode(((c.charCodeAt(0)-base+shift+26*10)%26)+base);
+        });
+
+        // Build source for Step 1: base64(rot13(caesar(final, -day)))
+        const src1 = btoa(rot13(caesar(final, -day)));
+        b64El.textContent = src1;
+
+        btn.onclick = () => {
+            // validate step 1
+            const want1 = atob(src1);
+            if (s1.value.trim() !== want1) { res.textContent='Step 1 incorrect'; return; }
+            s2.disabled = false;
+            const want2 = rot13(want1);
+            if (s2.value.trim() !== want2) { res.textContent='Step 2 incorrect or empty'; return; }
+            s3.disabled = false;
+            const want3 = caesar(want2, day);
+            if (s3.value.trim() !== want3) { res.textContent='Step 3 incorrect'; return; }
+            res.innerHTML = '🎉 Decrypted! Flag: <code>CRYPTO{layer_cake_done}</code>';
+            this.showMessage('🔓 Cascade cracked!', 'success');
+        };
     }
 
-    // Challenge 6: Algorithm & Logic
+    // Challenge 6: Maze Letters
     setupChallenge6() {
-        const inputs = ['algo1', 'algo2', 'algo3', 'algo4'];
-        const answers = ['o(n)', 'inorder', '42', 'stack'];
-        
-        inputs.forEach(inputId => {
-            const input = document.getElementById(inputId);
-            if (input) {
-                input.addEventListener('input', () => {
-                    this.checkAlgoAnswers(inputs, answers, 'algoResult');
-                });
+        const el = document.getElementById('maze');
+        const hud = document.getElementById('mazeHUD');
+        const up=document.getElementById('upBtn'),dn=document.getElementById('downBtn'),lf=document.getElementById('leftBtn'),rt=document.getElementById('rightBtn');
+        if(!el||!hud||!up||!dn||!lf||!rt) return;
+
+        const map = [
+            '#######',
+            '#S..#E#',
+            '#.#.#.#',
+            '#A..#.#',
+            '#.###.#',
+            '#..Z..#',
+            '#######'
+        ];
+        const seq = ['M','A','Z','E'];
+        let collected = 0;
+        let pos = { r:1, c:1 };
+
+        function render(){
+            el.innerHTML='';
+            for(let r=0;r<map.length;r++){
+                for(let c=0;c<map[0].length;c++){
+                    const cell = document.createElement('div');
+                    cell.style.width='28px';cell.style.height='28px';cell.style.border='1px solid var(--border-color)';cell.style.borderRadius='4px';
+                    const ch = map[r][c];
+                    if (r===pos.r && c===pos.c) { cell.style.background='#3b82f6'; }
+                    else if (ch==='#') cell.style.background='#111827';
+                    else if (['M','A','Z','E'].includes(ch)) { cell.textContent=ch; cell.style.textAlign='center'; cell.style.lineHeight='28px'; }
+                    else cell.style.background='var(--bg-tertiary)';
+                    el.appendChild(cell);
+                }
             }
+            hud.textContent = `Collected: ${seq.slice(0,collected).join('')} _`;
+        }
+
+        function move(dr,dc){
+            const nr=pos.r+dr,nc=pos.c+dc; const ch = map[nr][nc];
+            if (ch==='#') return;
+            pos={r:nr,c:nc};
+            if (['M','A','Z','E'].includes(ch)){
+                if (ch===seq[collected]) collected++;
+                else collected=0; // wrong order resets
+                if (collected===seq.length){
+                    hud.innerHTML = '🎉 Path complete! Flag: <code>MAZE{left_left_up_right_up_right}</code>';
+                }
+            }
+            render();
+        }
+
+        document.addEventListener('keydown', (e)=>{
+            const k=e.key.toLowerCase();
+            if(k==='arrowup'||k==='w') move(-1,0);
+            if(k==='arrowdown'||k==='s') move(1,0);
+            if(k==='arrowleft'||k==='a') move(0,-1);
+            if(k==='arrowright'||k==='d') move(0,1);
         });
+        up.onclick=()=>move(-1,0); dn.onclick=()=>move(1,0); lf.onclick=()=>move(0,-1); rt.onclick=()=>move(0,1);
+        render();
     }
 
     // Helper functions for checking answers
