@@ -1066,12 +1066,13 @@ class TechEscapeGame {
             const res = await fetch('/api/leaderboard');
             const data = await res.json();
             if (!data.success || !Array.isArray(data.leaderboard)) return;
+            const total = data.leaderboard.length;
             const my = data.leaderboard.find(r => (r.teamname || r.team_id) === this.currentTeam.name || (r.teamname || '').toLowerCase() === (this.currentTeam.name || '').toLowerCase());
             if (my) {
-                el.textContent = `#${my.rank}`;
-                el.title = `Rank ${my.rank} • ${my.completed_count} solved • ${Math.floor((my.total_time_ms||0)/60000)}m`;
+                el.textContent = `Team Position: ${my.rank}/${total}`;
+                el.title = `Rank ${my.rank} of ${total} • ${my.completed_count} solved • ${Math.floor((my.total_time_ms||0)/60000)}m`;
             } else {
-                el.textContent = '#--';
+                el.textContent = `Team Position: --/${total || '--'}`;
             }
         } catch {}
     }
