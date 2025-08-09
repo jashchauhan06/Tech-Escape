@@ -807,7 +807,7 @@ class TechEscapeGame {
         }
         
         if (currentTeamName && this.currentTeam) {
-            currentTeamName.textContent = this.currentTeam.name;
+            currentTeamName.textContent = `Team: ${this.currentTeam.name}`;
         }
 
         this.updateHintsDisplay();
