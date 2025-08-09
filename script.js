@@ -817,8 +817,11 @@ class TechEscapeGame {
         try {
             const savedIdxRaw = localStorage.getItem('te_currRiddle');
             const savedIdx = savedIdxRaw ? parseInt(savedIdxRaw, 10) : NaN;
+            const unlockedMax = this.getUnlockedMaxIndex();
             if (!Number.isNaN(savedIdx) && savedIdx >= 0 && savedIdx < this.riddles.length) {
-                this.currentRiddle = savedIdx;
+                this.currentRiddle = Math.min(savedIdx, unlockedMax);
+            } else if (unlockedMax >= 0) {
+                this.currentRiddle = unlockedMax;
             }
         } catch {}
 
@@ -831,8 +834,11 @@ class TechEscapeGame {
             try {
                 const savedIdxRaw = localStorage.getItem('te_currRiddle');
                 const savedIdx = savedIdxRaw ? parseInt(savedIdxRaw, 10) : NaN;
+                const unlockedMax = this.getUnlockedMaxIndex();
                 if (!Number.isNaN(savedIdx) && savedIdx >= 0 && savedIdx < this.riddles.length) {
-                    this.currentRiddle = savedIdx;
+                    this.currentRiddle = Math.min(savedIdx, unlockedMax);
+                } else if (unlockedMax >= 0) {
+                    this.currentRiddle = unlockedMax;
                 }
             } catch {}
             this.loadCurrentRiddle();
@@ -939,9 +945,8 @@ class TechEscapeGame {
                 contBtn.textContent = 'Continue';
             } else if (unlockedMax !== null && unlockedMax === this.currentRiddle && this.currentRiddle < this.riddles.length - 1) {
                 // Optionally allow jump to next unsolved
-                contBtn.style.display = 'flex';
-                contBtn.textContent = 'Next';
-                contBtn.onclick = () => this.jumpToChallenge(this.currentRiddle + 1);
+                // Only enable Next if this.currentRiddle is already recorded as unlocked (equal to unlockedMax)
+                contBtn.style.display = 'none';
             } else {
                 contBtn.style.display = 'none';
             }
@@ -964,6 +969,11 @@ class TechEscapeGame {
     // Jump to a specific challenge index without requiring solve
     jumpToChallenge(index) {
         if (index < 0 || index >= this.riddles.length) return;
+        const unlockedMax = this.getUnlockedMaxIndex();
+        if (index > unlockedMax) {
+            this.showMessage('🔒 Complete previous challenges to unlock this one.', 'warning');
+            return;
+        }
         this.currentRiddle = index;
         try { localStorage.setItem('te_currRiddle', String(this.currentRiddle)); } catch {}
         this.loadCurrentRiddle();
