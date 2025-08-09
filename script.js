@@ -629,8 +629,20 @@ class TechEscapeGame {
         localStorage.removeItem('techEscapeTeam');
     }
 
-    // Auto-login disabled
-    checkAuthStatus() {}
+    // Auto-login: restore team session if present
+    checkAuthStatus() {
+        try {
+            const savedTeamRaw = localStorage.getItem('techEscapeTeam');
+            if (savedTeamRaw) {
+                const team = JSON.parse(savedTeamRaw);
+                if (team && team.id) {
+                    this.currentTeam = team;
+                    this.showGameInterface();
+                    this.loadGameProgress();
+                }
+            }
+        } catch {}
+    }
 
     // Handle login
     async handleLogin(e) {
@@ -807,6 +819,14 @@ class TechEscapeGame {
 
         // Load current riddle with delay to ensure DOM is ready
         setTimeout(() => {
+            // If a saved index exists (set earlier), ensure it is used for rendering
+            try {
+                const savedIdxRaw = localStorage.getItem('te_currRiddle');
+                const savedIdx = savedIdxRaw ? parseInt(savedIdxRaw, 10) : NaN;
+                if (!Number.isNaN(savedIdx) && savedIdx >= 0 && savedIdx < this.riddles.length) {
+                    this.currentRiddle = savedIdx;
+                }
+            } catch {}
             this.loadCurrentRiddle();
         }, 300);
     }
