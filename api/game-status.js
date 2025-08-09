@@ -1,6 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
 
-const DURATION_MS = 15 * 60 * 1000
+const DEFAULT_DURATION_MS = 15 * 60 * 1000
 
 async function parseBody(req) {
   if (req.body && typeof req.body === 'object') return req.body
@@ -31,19 +31,29 @@ export default async function handler(req, res) {
   if (req.method === 'GET') {
     const { data } = await supabase
       .from('game_state')
-      .select('id, started, start_time')
+      .select('id, started, start_time, duration_ms, paused')
       .eq('id', 1)
       .maybeSingle()
 
     if (!data || !data.started || !data.start_time) {
-      return res.status(200).json({ started: false, remainingMs: null, startedAt: null })
+      return res
+        .status(200)
+        .json({ started: false, paused: false, remainingMs: null, startedAt: null })
     }
 
-    const startedAt = new Date(data.start_time).toISOString()
-    const endMs = new Date(data.start_time).getTime() + DURATION_MS
-    const remainingMs = Math.max(0, endMs - Date.now())
+    const startedAtIso = new Date(data.start_time).toISOString()
+    const durationMs = data.duration_ms ?? DEFAULT_DURATION_MS
+    let remainingMs
+    if (data.paused) {
+      remainingMs = durationMs
+    } else {
+      const elapsed = Date.now() - new Date(data.start_time).getTime()
+      remainingMs = Math.max(0, durationMs - elapsed)
+    }
 
-    return res.status(200).json({ started: true, remainingMs, startedAt })
+    return res
+      .status(200)
+      .json({ started: true, paused: !!data.paused, remainingMs, startedAt: startedAtIso })
   }
 
   if (req.method === 'POST') {
@@ -56,12 +66,73 @@ export default async function handler(req, res) {
     const action = body.action || 'start'
 
     if (action === 'start') {
+      const durationMs =
+        (Number(body.durationMinutes) || 15) * 60 * 1000
       const { data, error } = await supabase
         .from('game_state')
         .upsert(
-          { id: 1, started: true, start_time: new Date().toISOString() },
+          {
+            id: 1,
+            started: true,
+            start_time: new Date().toISOString(),
+            duration_ms: durationMs,
+            paused: false,
+          },
           { onConflict: 'id' }
         )
+        .select('*')
+        .single()
+      if (error) return res.status(500).json({ success: false, error: error.message })
+      return res.status(200).json({ success: true, state: data })
+    }
+
+    if (action === 'pause') {
+      // Freeze remaining time by collapsing duration_ms to remaining and resetting start_time
+      const { data: row } = await supabase
+        .from('game_state')
+        .select('start_time, duration_ms')
+        .eq('id', 1)
+        .maybeSingle()
+      if (!row || !row.start_time) return res.status(400).json({ success: false, error: 'Game not started' })
+      const elapsed = Date.now() - new Date(row.start_time).getTime()
+      const remaining = Math.max(0, (row.duration_ms ?? DEFAULT_DURATION_MS) - elapsed)
+      const { data, error } = await supabase
+        .from('game_state')
+        .upsert(
+          { id: 1, paused: true, start_time: new Date().toISOString(), duration_ms: remaining },
+          { onConflict: 'id' }
+        )
+        .select('*')
+        .single()
+      if (error) return res.status(500).json({ success: false, error: error.message })
+      return res.status(200).json({ success: true, state: data })
+    }
+
+    if (action === 'resume') {
+      const { data, error } = await supabase
+        .from('game_state')
+        .upsert(
+          { id: 1, paused: false, start_time: new Date().toISOString() },
+          { onConflict: 'id' }
+        )
+        .select('*')
+        .single()
+      if (error) return res.status(500).json({ success: false, error: error.message })
+      return res.status(200).json({ success: true, state: data })
+    }
+
+    if (action === 'extend') {
+      const delta = Number(body.minutes) || 0
+      const deltaMs = Math.round(delta * 60 * 1000)
+      const { data: row } = await supabase
+        .from('game_state')
+        .select('duration_ms')
+        .eq('id', 1)
+        .maybeSingle()
+      const newDuration = (row?.duration_ms ?? DEFAULT_DURATION_MS) + deltaMs
+      const { data, error } = await supabase
+        .from('game_state')
+        .upsert({ id: 1, duration_ms: newDuration }, { onConflict: 'id' })
         .select('*')
         .single()
       if (error) return res.status(500).json({ success: false, error: error.message })
@@ -72,7 +143,7 @@ export default async function handler(req, res) {
       const { data, error } = await supabase
         .from('game_state')
         .upsert(
-          { id: 1, started: false, start_time: null },
+          { id: 1, started: false, paused: false, start_time: null, duration_ms: DEFAULT_DURATION_MS },
           { onConflict: 'id' }
         )
         .select('*')

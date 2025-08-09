@@ -762,8 +762,18 @@ _____
         const gameContainer = document.getElementById('gameContainer');
         const currentTeamName = document.getElementById('currentTeamName');
 
+        // Only allow entering game if event started
+        const gate = document.getElementById('game-status-banner');
+        const isBlocked = gate && gate.textContent.includes('not started');
+        if (isBlocked) {
+            this.showMessage('⏳ Event has not started yet. Please wait for the admin.', 'warning');
+            return;
+        }
         if (authContainer) authContainer.classList.add('hidden');
-        if (gameContainer) gameContainer.classList.remove('hidden');
+        if (gameContainer) {
+            gameContainer.classList.remove('hidden');
+            gameContainer.setAttribute('aria-hidden', 'false');
+        }
         
         if (currentTeamName && this.currentTeam) {
             currentTeamName.textContent = this.currentTeam.name;
