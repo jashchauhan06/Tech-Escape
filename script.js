@@ -810,6 +810,11 @@ class TechEscapeGame {
             currentTeamName.textContent = `Team: ${this.currentTeam.name}`;
         }
 
+        // Kick off initial team position fetch
+        this.updateTeamPosition();
+        if (this._posInterval) clearInterval(this._posInterval);
+        this._posInterval = setInterval(() => this.updateTeamPosition(), 5000);
+
         this.updateHintsDisplay();
         this.startTime = new Date();
 
@@ -1050,6 +1055,24 @@ class TechEscapeGame {
             if (mag && mag.parentNode) mag.parentNode.removeChild(mag);
             const marks = document.querySelectorAll('.page-hunt-mark');
             marks.forEach((el) => el.parentNode && el.parentNode.removeChild(el));
+        } catch {}
+    }
+
+    // Fetch and render current team position from leaderboard API
+    async updateTeamPosition() {
+        try {
+            const el = document.getElementById('teamPosition');
+            if (!el || !this.currentTeam) return;
+            const res = await fetch('/api/leaderboard');
+            const data = await res.json();
+            if (!data.success || !Array.isArray(data.leaderboard)) return;
+            const my = data.leaderboard.find(r => (r.teamname || r.team_id) === this.currentTeam.name || (r.teamname || '').toLowerCase() === (this.currentTeam.name || '').toLowerCase());
+            if (my) {
+                el.textContent = `#${my.rank}`;
+                el.title = `Rank ${my.rank} • ${my.completed_count} solved • ${Math.floor((my.total_time_ms||0)/60000)}m`;
+            } else {
+                el.textContent = '#--';
+            }
         } catch {}
     }
 
