@@ -608,7 +608,7 @@ _____
             }
             this.currentTeam = {
                 id: data.team.id,
-                name: data.team.name,
+                name: data.team.teamname || data.team.name,
                 leader: data.team.leader,
                 email: data.team.email,
                 password: data.team.password,

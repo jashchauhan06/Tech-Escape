@@ -40,7 +40,7 @@ export default async function handler(req, res) {
     const { data, error } = await supabase
       .from('teams')
       .select('*')
-      .eq('name', teamName)
+      .eq('teamname', teamName)
       .eq('password', password)
       .maybeSingle()
 
