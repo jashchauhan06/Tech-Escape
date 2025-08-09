@@ -914,6 +914,9 @@ class TechEscapeGame {
             const hintData = await hintRes.json();
             if (hintData && hintData.success && hintData.state) {
                 this.hintsUsed = Math.max(0, Number(hintData.state.hintsUsed) || 0);
+                // Reflect updated hints in the UI immediately
+                this.updateHintsDisplay();
+                this.updateHintButton();
             }
         } catch {
             // Network error: fall back to current state
