@@ -37,9 +37,9 @@ export default async function handler(req, res) {
   }
 
   const body = await parseBody(req)
-  const { teamName, teamLeader, password } = body || {}
+  const { teamName, teamLeader, password, email, teamSize } = body || {}
 
-  if (!teamName || !teamLeader || !password) {
+  if (!teamName || !teamLeader || !password || !email) {
     return res.status(400).json({
       success: false,
       error: 'Missing required fields',
@@ -63,9 +63,14 @@ export default async function handler(req, res) {
     }
 
     const insertPayload = {
-      teamname: teamName,
-      leader: teamLeader,
-      password,
+      teamname: String(teamName),
+      leader: String(teamLeader),
+      password: String(password),
+      email: String(email),
+    }
+    const parsedSize = parseInt(teamSize, 10)
+    if (!Number.isNaN(parsedSize)) {
+      insertPayload.size = parsedSize
     }
 
     const { data, error } = await supabase
