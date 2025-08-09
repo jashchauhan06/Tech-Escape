@@ -12,8 +12,8 @@ async function parseBody(req) {
 }
 
 export default async function handler(req, res) {
-  if (req.method !== 'POST') {
-    res.setHeader('Allow', ['POST'])
+  if (req.method !== 'POST' && req.method !== 'GET') {
+    res.setHeader('Allow', ['GET', 'POST'])
     return res.status(405).json({ success: false, error: 'Method Not Allowed' })
   }
 
@@ -24,6 +24,28 @@ export default async function handler(req, res) {
   }
   const supabase = createClient(supabaseUrl, supabaseKey)
 
+  if (req.method === 'GET') {
+    try {
+      const teamId = (req.query && (req.query.teamId || req.query.team_id)) ||
+        (() => { try { return new URL(req.url, 'http://localhost').searchParams.get('teamId') } catch { return null } })()
+
+      if (!teamId) {
+        return res.status(400).json({ success: false, error: 'Missing teamId' })
+      }
+
+      const { data, error } = await supabase
+        .from('team_progress')
+        .select('team_id, teamname, total_time_ms, completed_count, started_at, finished_at, updated_at')
+        .eq('team_id', teamId)
+        .maybeSingle()
+      if (error) throw error
+      return res.status(200).json({ success: true, progress: data || null })
+    } catch (err) {
+      return res.status(500).json({ success: false, error: err.message })
+    }
+  }
+
+  // POST handler
   const body = await parseBody(req)
   const teamId = body.teamId
   const teamname = String(body.teamname || '').trim()

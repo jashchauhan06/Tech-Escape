@@ -18,6 +18,7 @@ class TechEscapeGame {
         // Data storage
         this.teams = this.loadTeams();
         this.riddles = this.initializeRiddles();
+        this.remoteCompletedCount = 0;
         
         // Error handling
         this.lastErrorTime = 0;
@@ -702,6 +703,10 @@ class TechEscapeGame {
                 },
                 registeredAt: data.team.registeredAt || new Date().toISOString()
             };
+            // Reset remote cache for the newly logged-in team
+            this.remoteCompletedCount = 0;
+            // Clear any stale client-side progress index
+            try { localStorage.removeItem('te_currRiddle'); } catch {}
             // Persist session locally so refresh keeps you logged in
             try { localStorage.setItem('techEscapeTeam', JSON.stringify(this.currentTeam)); } catch {}
             this.showMessage('Welcome back! Loading your progress...', 'success');
@@ -847,34 +852,17 @@ class TechEscapeGame {
             }
         } catch {}
 
-        // Restore last visited riddle from localStorage if available
-        try {
-            const savedIdxRaw = localStorage.getItem('te_currRiddle');
-            const savedIdx = savedIdxRaw ? parseInt(savedIdxRaw, 10) : NaN;
-            const unlockedMax = this.getUnlockedMaxIndex();
-            if (!Number.isNaN(savedIdx) && savedIdx >= 0 && savedIdx < this.riddles.length) {
-                this.currentRiddle = Math.min(savedIdx, unlockedMax);
-            } else if (unlockedMax >= 0) {
-                this.currentRiddle = unlockedMax;
-            }
-        } catch {}
+        // Set starting challenge from remote progress if already fetched
+        const unlockedMax = this.getUnlockedMaxIndex();
+        if (unlockedMax >= 0) this.currentRiddle = unlockedMax;
 
         // Setup game listeners
         this.setupGameListeners();
 
         // Load current riddle with delay to ensure DOM is ready
         setTimeout(() => {
-            // If a saved index exists (set earlier), ensure it is used for rendering
-            try {
-                const savedIdxRaw = localStorage.getItem('te_currRiddle');
-                const savedIdx = savedIdxRaw ? parseInt(savedIdxRaw, 10) : NaN;
-                const unlockedMax = this.getUnlockedMaxIndex();
-                if (!Number.isNaN(savedIdx) && savedIdx >= 0 && savedIdx < this.riddles.length) {
-                    this.currentRiddle = Math.min(savedIdx, unlockedMax);
-                } else if (unlockedMax >= 0) {
-                    this.currentRiddle = unlockedMax;
-                }
-            } catch {}
+            const maxIdx = this.getUnlockedMaxIndex();
+            if (maxIdx >= 0) this.currentRiddle = maxIdx;
             this.loadCurrentRiddle();
         }, 300);
     }
@@ -907,17 +895,27 @@ class TechEscapeGame {
         }, 100);
     }
 
-    // Load game progress for returning teams
-    loadGameProgress() {
-        if (this.currentTeam?.progress) {
-            this.currentRiddle = this.currentTeam.progress.currentRiddle || 0;
-            this.hintsUsed = this.currentTeam.progress.hintsUsed || 0;
-
-            if (this.currentRiddle >= this.riddles.length) {
-                // Directly redirect to final riddle page
-                window.location.href = 'final-riddle.html';
-                return;
+    // Load game progress from Supabase for the current team
+    async loadGameProgress() {
+        if (!this.currentTeam) return;
+        try {
+            const res = await fetch(`/api/progress?teamId=${encodeURIComponent(this.currentTeam.id)}`);
+            const data = await res.json();
+            if (data && data.success && data.progress) {
+                this.remoteCompletedCount = Math.max(0, Number(data.progress.completed_count) || 0);
+                // Set the next unsolved challenge index (0-based)
+                this.currentRiddle = Math.min(this.remoteCompletedCount, this.riddles.length - 1);
+            } else {
+                this.remoteCompletedCount = 0;
+                this.currentRiddle = 0;
             }
+        } catch {
+            // Network error: fall back to current state
+        }
+
+        if (this.currentRiddle >= this.riddles.length) {
+            window.location.href = 'final-riddle.html';
+            return;
         }
 
         this.updateProgressDisplay();
@@ -1003,19 +1001,15 @@ class TechEscapeGame {
             return;
         }
         this.currentRiddle = index;
-        try { localStorage.setItem('te_currRiddle', String(this.currentRiddle)); } catch {}
         this.loadCurrentRiddle();
         this.updateProgressDisplay();
     }
 
     // Compute the highest unlocked challenge index based on stored progress
     getUnlockedMaxIndex() {
-        try {
-            const savedIdxRaw = localStorage.getItem('te_currRiddle');
-            const idx = savedIdxRaw ? parseInt(savedIdxRaw, 10) : NaN;
-            if (!Number.isNaN(idx)) return Math.max(0, Math.min(idx, this.riddles.length - 1));
-        } catch {}
-        return this.currentRiddle || 0;
+        // Use remote completed count when available; otherwise fallback to current index
+        const remote = Number(this.remoteCompletedCount) || 0;
+        return Math.max(remote, this.currentRiddle || 0);
     }
 
     // Wait for DOM elements to be ready
@@ -1276,7 +1270,7 @@ class TechEscapeGame {
             } catch {}
             
             this.currentRiddle++;
-            try { localStorage.setItem('te_currRiddle', String(this.currentRiddle)); } catch {}
+            this.remoteCompletedCount = Math.max(this.remoteCompletedCount, this.currentRiddle);
             this.saveGameProgress();
 
             setTimeout(() => {
@@ -1533,23 +1527,20 @@ class TechEscapeGame {
     saveGameProgress() {
         if (!this.currentTeam) return;
 
-        this.currentTeam.progress = {
-            currentRiddle: this.currentRiddle,
-            hintsUsed: this.hintsUsed,
-            startTime: this.startTime ? this.startTime.toISOString() : new Date().toISOString(),
-            completedAt: this.endTime ? this.endTime.toISOString() : null,
-            completedRiddles: Array.from({length: this.currentRiddle}, (_, i) => i)
-        };
-
-        // Update in teams array
-        const teamIndex = this.teams.findIndex(t => t.id === this.currentTeam.id);
-        if (teamIndex !== -1) {
-            this.teams[teamIndex] = this.currentTeam;
-            this.saveTeams();
-        }
-
-        // Update localStorage
-        localStorage.setItem('techEscapeTeam', JSON.stringify(this.currentTeam));
+        // Persist minimal progress to Supabase via API
+        try {
+            fetch('/api/progress', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    teamId: this.currentTeam.id,
+                    teamname: this.currentTeam.name,
+                    deltaMs: 0,
+                    completedCount: Math.min(this.currentRiddle, this.riddles.length),
+                    finished: this.currentRiddle >= this.riddles.length
+                })
+            });
+        } catch {}
     }
 
     // Load teams from localStorage
