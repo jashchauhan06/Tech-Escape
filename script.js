@@ -36,8 +36,9 @@ class TechEscapeGame {
         
         try {
             this.initializeEventListeners();
-            this.initializeTimer();
-            // Removed auto-login via localStorage; require explicit login
+        // Timer will be controlled by admin game state
+        // Removed auto-login via localStorage; require explicit login
+        this.pollGameStatus();
             this.initializePopups();
             this.gameInitialized = true;
             console.log('✅ Game initialized successfully');
@@ -477,15 +478,12 @@ _____
     }
 
     // Initialize countdown timer
-    initializeTimer() {
-        const gameDuration = 15 * 60 * 1000; // 15 minutes
-        const startTime = Date.now();
-        const endTime = startTime + gameDuration;
-
-        this.updateTimer(endTime);
-
-        setInterval(() => {
-            this.updateTimer(endTime);
+    initializeTimer(endTimestampMs) {
+        if (!endTimestampMs) return;
+        this.updateTimer(endTimestampMs);
+        if (this.timerInterval) clearInterval(this.timerInterval);
+        this.timerInterval = setInterval(() => {
+            this.updateTimer(endTimestampMs);
         }, 1000);
     }
 
@@ -512,6 +510,44 @@ _____
             if (secondsEl) secondsEl.textContent = '00';
             
             this.handleTimeUp();
+        }
+    }
+
+    // Poll admin-controlled game status
+    async pollGameStatus() {
+        try {
+            const res = await fetch('/api/game-status');
+            const data = await res.json();
+            const bannerId = 'game-status-banner';
+            let banner = document.getElementById(bannerId);
+            if (!data.started) {
+                if (!banner) {
+                    banner = document.createElement('div');
+                    banner.id = bannerId;
+                    banner.style.position = 'fixed';
+                    banner.style.top = '70px';
+                    banner.style.right = '16px';
+                    banner.style.zIndex = '1000';
+                    banner.style.background = '#f59e0b';
+                    banner.style.color = '#111827';
+                    banner.style.padding = '8px 12px';
+                    banner.style.borderRadius = '8px';
+                    banner.style.fontSize = '12px';
+                    banner.innerText = '⏳ Event has not started yet. Please wait for the admin.';
+                    document.body.appendChild(banner);
+                }
+                // Stop any timer
+                if (this.timerInterval) clearInterval(this.timerInterval);
+            } else {
+                if (banner) banner.remove();
+                const endMs = Date.now() + (data.remainingMs || 0);
+                this.initializeTimer(endMs);
+            }
+        } catch (e) {
+            console.warn('Failed to fetch game status');
+        } finally {
+            // Poll every 5 seconds
+            setTimeout(() => this.pollGameStatus(), 5000);
         }
     }
 
