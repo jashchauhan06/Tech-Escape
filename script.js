@@ -561,6 +561,8 @@ class TechEscapeGame {
                 const endMs = Date.now() + (data.remainingMs || 0);
                 this.initializeTimer(endMs);
                 this.setFrozenUI(false);
+                // Prepare fullscreen guard after event starts
+                this.setupFullscreenGuard();
             }
         } catch (e) {
             console.warn('Failed to fetch game status');
@@ -1056,6 +1058,38 @@ class TechEscapeGame {
             const marks = document.querySelectorAll('.page-hunt-mark');
             marks.forEach((el) => el.parentNode && el.parentNode.removeChild(el));
         } catch {}
+    }
+
+    // Request fullscreen and discourage tab switching while event runs
+    setupFullscreenGuard() {
+        const docEl = document.documentElement;
+        const requestFS = () => {
+            const fn = docEl.requestFullscreen || docEl.webkitRequestFullscreen || docEl.mozRequestFullScreen || docEl.msRequestFullscreen;
+            if (fn) try { fn.call(docEl); } catch {}
+        };
+        const ensureFS = () => {
+            if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+                requestFS();
+            }
+        };
+        if (!this._fsInit) {
+            this._fsInit = true;
+            // Prompt once on first user interaction to satisfy browser gesture requirement
+            const onFirstInteract = () => { ensureFS(); window.removeEventListener('click', onFirstInteract); window.removeEventListener('keydown', onFirstInteract); };
+            window.addEventListener('click', onFirstInteract, { once: true });
+            window.addEventListener('keydown', onFirstInteract, { once: true });
+            // If fullscreen exits, try to re-enter on next interaction
+            document.addEventListener('fullscreenchange', () => {
+                if (!document.fullscreenElement) {
+                    window.addEventListener('click', onFirstInteract, { once: true });
+                    window.addEventListener('keydown', onFirstInteract, { once: true });
+                }
+            });
+            // Soft deterrent: blur/focus handlers to remind users
+            window.addEventListener('blur', () => {
+                this.showMessage('⚠️ Please stay on the game tab during the event.', 'warning');
+            });
+        }
     }
 
     // Fetch and render current team position from leaderboard API
