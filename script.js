@@ -923,7 +923,8 @@ class TechEscapeGame {
         }
         // Create/Update a Continue button to jump back to last unlocked challenge
         const unlockedMax = this.getUnlockedMaxIndex();
-        const navParent = prevBtn ? prevBtn.parentElement : null;
+        // Find a stable nav container
+        const navParent = (prevBtn && prevBtn.parentElement) || document.querySelector('.challenge-nav') || document.getElementById('riddleQuestion');
         let contBtn = document.getElementById('continueBtn');
         if (navParent) {
             if (!contBtn) {
@@ -931,22 +932,16 @@ class TechEscapeGame {
                 contBtn.id = 'continueBtn';
                 contBtn.textContent = 'Continue';
                 contBtn.style.marginLeft = '8px';
-                contBtn.className = prevBtn.className || '';
+                contBtn.className = prevBtn ? prevBtn.className : 'btn btn-primary';
                 navParent.appendChild(contBtn);
             }
             contBtn.onclick = () => {
                 const idx = this.getUnlockedMaxIndex();
-                if (idx !== null && idx >= 0) {
-                    this.jumpToChallenge(idx);
-                }
+                if (idx !== null && idx >= 0) this.jumpToChallenge(idx);
             };
             if (unlockedMax !== null && unlockedMax > this.currentRiddle) {
                 contBtn.style.display = 'flex';
                 contBtn.textContent = 'Continue';
-            } else if (unlockedMax !== null && unlockedMax === this.currentRiddle && this.currentRiddle < this.riddles.length - 1) {
-                // Optionally allow jump to next unsolved
-                // Only enable Next if this.currentRiddle is already recorded as unlocked (equal to unlockedMax)
-                contBtn.style.display = 'none';
             } else {
                 contBtn.style.display = 'none';
             }
@@ -959,7 +954,6 @@ class TechEscapeGame {
             this.currentRiddle--;
             this.loadCurrentRiddle();
             this.saveGameProgress();
-            try { localStorage.setItem('te_currRiddle', String(this.currentRiddle)); } catch {}
             
             // Show navigation message
             this.showMessage(`↩️ Moved to Challenge ${this.currentRiddle + 1}`, 'info');
@@ -1037,6 +1031,8 @@ class TechEscapeGame {
         if (riddle.interactive && riddle.setupFunction) {
             setTimeout(() => {
                 this[riddle.setupFunction]();
+                // After the challenge UI is mounted, ensure the Continue button is available/updated
+                this.updateNavigationButtons();
             }, 200);
         }
 
