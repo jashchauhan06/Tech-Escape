@@ -43,32 +43,6 @@ export default function AuthContainer() {
     })
   }
 
-  // Inline testing helpers so the buttons are visible on the login card
-  const [apiStatus, setApiStatus] = useState('')
-  const [supabaseStatus, setSupabaseStatus] = useState('')
-
-  const testAPI = async () => {
-    try {
-      setApiStatus('Testing…')
-      const res = await fetch('/api/test')
-      const data = await res.json()
-      setApiStatus(`✅ ${data.message}`)
-    } catch (err) {
-      setApiStatus(`❌ ${(err as Error).message}`)
-    }
-  }
-
-  const testSupabase = async () => {
-    try {
-      setSupabaseStatus('Testing…')
-      const res = await fetch('/api/test-supabase')
-      const data = await res.json()
-      if (data.success) setSupabaseStatus('✅ Supabase connection successful')
-      else setSupabaseStatus(`❌ ${data.error || data.message}`)
-    } catch (err) {
-      setSupabaseStatus(`❌ ${(err as Error).message}`)
-    }
-  }
 
   return (
     <div className="flex justify-center items-center min-h-[70vh]">
@@ -117,16 +91,7 @@ export default function AuthContainer() {
             New team? <button onClick={() => setShowRegister(true)} className="text-[var(--accent-color)] hover:underline">Register here</button>
           </p>
 
-          {/* Highly-visible test controls */}
-          <div className="mt-4 flex flex-col gap-2">
-            <div className="flex gap-2">
-              <button onClick={testAPI} className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded text-xs">Test API</button>
-              <button onClick={testSupabase} className="bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded text-xs">Test Supabase</button>
-            </div>
-            {(apiStatus || supabaseStatus) && (
-              <div className="text-xs text-[var(--text-secondary)]">{apiStatus || supabaseStatus}</div>
-            )}
-          </div>
+          
         </div>
 
         {/* Registration Form */}
@@ -202,14 +167,7 @@ export default function AuthContainer() {
           <p className="auth-switch text-center mt-6 text-sm text-[var(--text-secondary)]">
             Already registered? <button onClick={() => setShowRegister(false)} className="text-[var(--accent-color)] hover:underline">Login here</button>
           </p>
-          <button 
-            type="button" 
-            onClick={createTestTeam}
-            disabled={isLoading}
-            className="btn btn-test w-full py-3 px-6 bg-[var(--campus-green)] border border-[var(--campus-green)] rounded-lg text-white text-sm font-semibold transition-all duration-200 hover:bg-[#047857] hover:border-[#047857] mt-4 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {isLoading ? 'Creating Demo...' : '🧪 Test Demo (Skip Registration)'}
-          </button>
+          
         </div>
       </div>
     </div>

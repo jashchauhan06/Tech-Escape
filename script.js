@@ -749,11 +749,7 @@ _____
         };
 
         // Demo no longer auto-logs; just prefill login fields for convenience
-        const loginName = document.getElementById('teamName');
-        const loginPass = document.getElementById('teamPassword');
-        if (loginName) loginName.value = testTeam.name;
-        if (loginPass) loginPass.value = testTeam.password;
-        this.showMessage('Demo team filled in login form. Click Start Adventure to log in.', 'info');
+        // Demo helper removed
     }
 
     // Show game interface

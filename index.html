@@ -38,12 +38,7 @@
                         <span class="time-label">Seconds</span>
                     </div>
                 </div>
-                <!-- Always-visible test controls for static deployment -->
-                <div class="test-controls" style="display:flex; gap:8px;">
-                    <a href="/api/test" target="_blank" style="background:#2563eb;color:#fff;padding:8px 12px;border-radius:8px;font-size:12px;white-space:nowrap;text-decoration:none;">Test API</a>
-                    <a href="/api/test-supabase" target="_blank" style="background:#16a34a;color:#fff;padding:8px 12px;border-radius:8px;font-size:12px;white-space:nowrap;text-decoration:none;">Test Supabase</a>
-                    <a href="#" onclick="fetch('/api/game-status').then(r=>r.json()).then(j=>alert(JSON.stringify(j,null,2)))" style="background:#6b7280;color:#fff;padding:8px 12px;border-radius:8px;font-size:12px;white-space:nowrap;text-decoration:none;">Game Status</a>
-                </div>
+                
             </div>
         </div>
     </header>
