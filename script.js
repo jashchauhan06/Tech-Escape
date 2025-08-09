@@ -514,7 +514,7 @@ _____
     }
 
     // Freeze/unfreeze the UI when admin pauses the event
-    setFrozenUI(isFrozen, message = '⏸ Event paused by admin') {
+    setFrozenUI(isFrozen, message = '⏸️ Event paused by admin') {
         const overlayId = 'freeze-overlay';
         let overlay = document.getElementById(overlayId);
         if (isFrozen) {
