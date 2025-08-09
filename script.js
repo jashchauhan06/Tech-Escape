@@ -37,6 +37,8 @@ class TechEscapeGame {
         
         try {
             this.initializeEventListeners();
+            this.refreshTeamsCount();
+            setInterval(() => this.refreshTeamsCount(), 15000);
         // Timer will be controlled by admin game state
         // Removed auto-login via localStorage; require explicit login
         this.pollGameStatus();
@@ -46,6 +48,24 @@ class TechEscapeGame {
         } catch (error) {
             console.error('❌ Game initialization failed:', error);
             this.showMessage('Game initialization failed. Please refresh the page.', 'error');
+        }
+    }
+
+    // Fetch number of registered teams from Supabase API and render
+    async refreshTeamsCount() {
+        try {
+            const el = document.getElementById('teamsCount');
+            if (!el) return;
+            const res = await fetch('/api/teams-count');
+            const data = await res.json();
+            if (data && data.success) {
+                el.textContent = String(data.count ?? 0);
+            } else {
+                el.textContent = '--';
+            }
+        } catch {
+            const el = document.getElementById('teamsCount');
+            if (el) el.textContent = '--';
         }
     }
 
