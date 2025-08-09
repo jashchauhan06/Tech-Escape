@@ -462,8 +462,14 @@ class TechEscapeGame {
 
             if (minutesEl) minutesEl.textContent = '00';
             if (secondsEl) secondsEl.textContent = '00';
-            
-            this.handleTimeUp();
+            // Stop further timer ticks and guard multiple popups
+            if (this.timerInterval) {
+                clearInterval(this.timerInterval);
+                this.timerInterval = null;
+            }
+            if (!this._timeUpHandled) {
+                this.handleTimeUp();
+            }
         }
     }
 
@@ -566,6 +572,8 @@ class TechEscapeGame {
 
     // Handle time up - redirect to main page and show team stats
     handleTimeUp() {
+        if (this._timeUpHandled) return;
+        this._timeUpHandled = true;
         // Save current progress before redirecting
         this.saveGameProgress();
         
@@ -907,6 +915,11 @@ class TechEscapeGame {
                 prevBtn.style.display = 'none';
             }
         }
+        // Ensure Next button returns to saved or next challenge without requiring re-solve
+        const answerForm = document.getElementById('answerForm');
+        if (answerForm) {
+            answerForm.addEventListener('submit', (e) => e.preventDefault());
+        }
     }
 
     // Go to previous challenge
@@ -920,6 +933,15 @@ class TechEscapeGame {
             // Show navigation message
             this.showMessage(`↩️ Moved to Challenge ${this.currentRiddle + 1}`, 'info');
         }
+    }
+
+    // Jump to a specific challenge index without requiring solve
+    jumpToChallenge(index) {
+        if (index < 0 || index >= this.riddles.length) return;
+        this.currentRiddle = index;
+        try { localStorage.setItem('te_currRiddle', String(this.currentRiddle)); } catch {}
+        this.loadCurrentRiddle();
+        this.updateProgressDisplay();
     }
 
     // Wait for DOM elements to be ready
