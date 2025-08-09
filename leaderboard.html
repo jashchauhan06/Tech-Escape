@@ -17,6 +17,7 @@
   </style>
   <script>
     function fmt(ms){ if(!ms && ms!==0) return '-'; const m=Math.floor(ms/60000); const s=Math.floor((ms%60000)/1000); return `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}` }
+    function medal(rank){ return rank===1?'🥇':rank===2?'🥈':rank===3?'🥉':'' }
     async function loadBoard(){
       const res = await fetch('/api/leaderboard');
       const data = await res.json();
@@ -26,7 +27,7 @@
       for(const row of data.leaderboard){
         const tr = document.createElement('tr');
         tr.innerHTML = `
-          <td class="mono">#${row.rank}</td>
+          <td class="mono">#${row.rank} <span aria-hidden="true">${medal(row.rank)}</span></td>
           <td>${row.teamname || row.team_id}</td>
           <td class="mono">${row.completed_count}</td>
           <td class="mono">${fmt(row.total_time_ms)}</td>
