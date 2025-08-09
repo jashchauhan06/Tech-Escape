@@ -8,13 +8,16 @@ type Todo = {
   title: string
 }
 
-export default function Home() {
+export default function TodosPage() {
   const [todos, setTodos] = useState<Todo[]>([])
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     async function getTodos() {
-      const { data, error } = await supabase.from('todos').select('*').order('id')
+      const { data, error } = await supabase
+        .from('todos')
+        .select('*')
+        .order('id')
       if (error) {
         setError(error.message)
         return
@@ -36,3 +39,5 @@ export default function Home() {
     </main>
   )
 }
+
+
