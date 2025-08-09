@@ -549,6 +549,8 @@ class TechEscapeGame {
                 ensureBanner('⏳ Event has not started yet. Please wait for the admin to start the event.');
                 if (this.timerInterval) { clearInterval(this.timerInterval); this.timerInterval = null; }
                 this.setFrozenUI(false);
+                this._eventRunning = false;
+                if (typeof this.hideFullscreenOverlay === 'function') this.hideFullscreenOverlay();
             } else if (data.paused) {
                 ensureBanner('⏸ Event paused by admin');
                 if (this.timerInterval) { clearInterval(this.timerInterval); this.timerInterval = null; }
@@ -556,13 +558,21 @@ class TechEscapeGame {
                 const endMs = Date.now() + (data.remainingMs || 0);
                 this.updateTimer(endMs); // one update to reflect current remaining
                 this.setFrozenUI(true);
+                this._eventRunning = false;
+                if (typeof this.hideFullscreenOverlay === 'function') this.hideFullscreenOverlay();
             } else {
                 if (banner) banner.remove();
                 const endMs = Date.now() + (data.remainingMs || 0);
                 this.initializeTimer(endMs);
                 this.setFrozenUI(false);
                 // Prepare fullscreen guard after event starts
+                this._eventRunning = true;
                 this.setupFullscreenGuard();
+                if (!this.isFullscreen()) {
+                    this.showFullscreenOverlay();
+                } else {
+                    this.hideFullscreenOverlay();
+                }
             }
         } catch (e) {
             console.warn('Failed to fetch game status');
@@ -1084,29 +1094,68 @@ class TechEscapeGame {
             const fn = docEl.requestFullscreen || docEl.webkitRequestFullscreen || docEl.mozRequestFullScreen || docEl.msRequestFullscreen;
             if (fn) try { fn.call(docEl); } catch {}
         };
-        const ensureFS = () => {
-            if (!document.fullscreenElement && !document.webkitFullscreenElement) {
-                requestFS();
-            }
-        };
+        const ensureFS = () => { if (!this.isFullscreen()) { requestFS(); } };
         if (!this._fsInit) {
             this._fsInit = true;
             // Prompt once on first user interaction to satisfy browser gesture requirement
-            const onFirstInteract = () => { ensureFS(); window.removeEventListener('click', onFirstInteract); window.removeEventListener('keydown', onFirstInteract); };
+            const onFirstInteract = () => { ensureFS(); if (!this.isFullscreen() && this._eventRunning) this.showFullscreenOverlay(); window.removeEventListener('click', onFirstInteract); window.removeEventListener('keydown', onFirstInteract); };
             window.addEventListener('click', onFirstInteract, { once: true });
             window.addEventListener('keydown', onFirstInteract, { once: true });
             // If fullscreen exits, try to re-enter on next interaction
             document.addEventListener('fullscreenchange', () => {
-                if (!document.fullscreenElement) {
+                if (!this.isFullscreen() && this._eventRunning) {
+                    this.showFullscreenOverlay();
                     window.addEventListener('click', onFirstInteract, { once: true });
                     window.addEventListener('keydown', onFirstInteract, { once: true });
+                } else {
+                    this.hideFullscreenOverlay();
                 }
             });
             // Soft deterrent: blur/focus handlers to remind users
             window.addEventListener('blur', () => {
                 this.showMessage('⚠️ Please stay on the game tab during the event.', 'warning');
             });
+            document.addEventListener('visibilitychange', () => {
+                if (document.visibilityState !== 'visible' && this._eventRunning) {
+                    this.showFullscreenOverlay();
+                }
+            });
         }
+    }
+
+    isFullscreen() {
+        return !!(document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement);
+    }
+
+    showFullscreenOverlay() {
+        let el = document.getElementById('fullscreen-overlay');
+        if (!el) {
+            el = document.createElement('div');
+            el.id = 'fullscreen-overlay';
+            el.style.position = 'fixed';
+            el.style.inset = '0';
+            el.style.background = 'rgba(0,0,0,0.85)';
+            el.style.color = '#fff';
+            el.style.display = 'flex';
+            el.style.alignItems = 'center';
+            el.style.justifyContent = 'center';
+            el.style.zIndex = '99999';
+            el.style.textAlign = 'center';
+            el.style.padding = '24px';
+            el.style.cursor = 'pointer';
+            el.innerHTML = '<div><h2 style="margin-bottom:12px">Please return to Fullscreen</h2><p>Click anywhere to re-enter fullscreen and continue the event.</p></div>';
+            document.body.appendChild(el);
+            el.addEventListener('click', () => {
+                const fn = document.documentElement.requestFullscreen || document.documentElement.webkitRequestFullscreen || document.documentElement.mozRequestFullScreen || document.documentElement.msRequestFullscreen;
+                if (fn) try { fn.call(document.documentElement); } catch {}
+            });
+        }
+        el.style.display = 'flex';
+    }
+
+    hideFullscreenOverlay() {
+        const el = document.getElementById('fullscreen-overlay');
+        if (el) el.style.display = 'none';
     }
 
     // Fetch and render current team position from leaderboard API
