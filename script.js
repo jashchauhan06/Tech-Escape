@@ -1104,6 +1104,7 @@ class TechEscapeGame {
             // If fullscreen exits, try to re-enter on next interaction
             document.addEventListener('fullscreenchange', () => {
                 if (!this.isFullscreen() && this._eventRunning) {
+                    this.warnTabLeave();
                     this.showFullscreenOverlay();
                     window.addEventListener('click', onFirstInteract, { once: true });
                     window.addEventListener('keydown', onFirstInteract, { once: true });
@@ -1113,10 +1114,14 @@ class TechEscapeGame {
             });
             // Soft deterrent: blur/focus handlers to remind users
             window.addEventListener('blur', () => {
-                this.showMessage('⚠️ Please stay on the game tab during the event.', 'warning');
+                if (this._eventRunning) {
+                    this.warnTabLeave();
+                    this.showMessage('⚠️ Please stay on the game tab during the event.', 'warning');
+                }
             });
             document.addEventListener('visibilitychange', () => {
                 if (document.visibilityState !== 'visible' && this._eventRunning) {
+                    this.warnTabLeave();
                     this.showFullscreenOverlay();
                 }
             });
@@ -1156,6 +1161,57 @@ class TechEscapeGame {
     hideFullscreenOverlay() {
         const el = document.getElementById('fullscreen-overlay');
         if (el) el.style.display = 'none';
+    }
+
+    // Warn user with sound and speech when leaving the screen/tab
+    warnTabLeave() {
+        const now = Date.now();
+        if (this._lastWarnAt && now - this._lastWarnAt < 8000) return; // throttle 8s
+        this._lastWarnAt = now;
+        this.playAttentionBeep();
+        this.speakWarning('Please stay on the game tab. Your team will be disqualified if you go out.');
+    }
+
+    playAttentionBeep() {
+        try {
+            const AudioCtx = window.AudioContext || window.webkitAudioContext;
+            if (!AudioCtx) return;
+            const ctx = new AudioCtx();
+            const duration = 0.15; // seconds per beep
+            const gap = 0.07;
+            const start = ctx.currentTime + 0.02;
+            for (let i = 0; i < 3; i++) {
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.type = 'sine';
+                osc.frequency.value = 880; // A5
+                gain.gain.setValueAtTime(0, start + i * (duration + gap));
+                gain.gain.linearRampToValueAtTime(0.25, start + i * (duration + gap) + 0.01);
+                gain.gain.linearRampToValueAtTime(0.0, start + i * (duration + gap) + duration);
+                osc.connect(gain).connect(ctx.destination);
+                osc.start(start + i * (duration + gap));
+                osc.stop(start + i * (duration + gap) + duration + 0.02);
+            }
+            // Auto close to free resources
+            setTimeout(() => { if (ctx && ctx.state !== 'closed') ctx.close(); }, 800);
+        } catch {}
+    }
+
+    speakWarning(text) {
+        try {
+            if (!('speechSynthesis' in window)) return;
+            // Cancel any ongoing utterances
+            window.speechSynthesis.cancel();
+            const utter = new SpeechSynthesisUtterance(text);
+            utter.rate = 1.0;
+            utter.pitch = 1.0;
+            utter.volume = 1.0;
+            // Prefer an English voice if available
+            const voices = window.speechSynthesis.getVoices?.() || [];
+            const en = voices.find(v => /en[-_]/i.test(v.lang));
+            if (en) utter.voice = en;
+            window.speechSynthesis.speak(utter);
+        } catch {}
     }
 
     // Fetch and render current team position from leaderboard API
