@@ -53,8 +53,7 @@ export default function Header() {
               Tech Escape
             </h1>
           </div>
-          
-          <div className="countdown-timer flex gap-4">
+          <div className="countdown-timer flex items-center gap-4">
             <div className="time-unit text-center bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded-lg p-3 min-w-16">
               <span className="time-value block text-2xl font-bold text-[var(--accent-color)] font-mono">
                 {minutes.toString().padStart(2, '0')}
@@ -71,6 +70,21 @@ export default function Header() {
                 Seconds
               </span>
             </div>
+            {/* Always-visible test links */}
+            <a
+              href="/api/test"
+              target="_blank"
+              className="ml-2 bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded text-xs whitespace-nowrap"
+            >
+              Test API
+            </a>
+            <a
+              href="/api/test-supabase"
+              target="_blank"
+              className="bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded text-xs whitespace-nowrap"
+            >
+              Test Supabase
+            </a>
           </div>
         </div>
       </div>

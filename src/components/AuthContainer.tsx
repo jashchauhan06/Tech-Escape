@@ -43,6 +43,33 @@ export default function AuthContainer() {
     })
   }
 
+  // Inline testing helpers so the buttons are visible on the login card
+  const [apiStatus, setApiStatus] = useState('')
+  const [supabaseStatus, setSupabaseStatus] = useState('')
+
+  const testAPI = async () => {
+    try {
+      setApiStatus('Testing…')
+      const res = await fetch('/api/test')
+      const data = await res.json()
+      setApiStatus(`✅ ${data.message}`)
+    } catch (err) {
+      setApiStatus(`❌ ${(err as Error).message}`)
+    }
+  }
+
+  const testSupabase = async () => {
+    try {
+      setSupabaseStatus('Testing…')
+      const res = await fetch('/api/test-supabase')
+      const data = await res.json()
+      if (data.success) setSupabaseStatus('✅ Supabase connection successful')
+      else setSupabaseStatus(`❌ ${data.error || data.message}`)
+    } catch (err) {
+      setSupabaseStatus(`❌ ${(err as Error).message}`)
+    }
+  }
+
   return (
     <div className="flex justify-center items-center min-h-[70vh]">
       <div className="auth-card bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded-2xl p-8 w-full max-w-md shadow-[var(--shadow-xl)]">
@@ -89,6 +116,17 @@ export default function AuthContainer() {
           <p className="auth-switch text-center mt-6 text-sm text-[var(--text-secondary)]">
             New team? <button onClick={() => setShowRegister(true)} className="text-[var(--accent-color)] hover:underline">Register here</button>
           </p>
+
+          {/* Highly-visible test controls */}
+          <div className="mt-4 flex flex-col gap-2">
+            <div className="flex gap-2">
+              <button onClick={testAPI} className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded text-xs">Test API</button>
+              <button onClick={testSupabase} className="bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded text-xs">Test Supabase</button>
+            </div>
+            {(apiStatus || supabaseStatus) && (
+              <div className="text-xs text-[var(--text-secondary)]">{apiStatus || supabaseStatus}</div>
+            )}
+          </div>
         </div>
 
         {/* Registration Form */}

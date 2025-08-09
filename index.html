@@ -27,7 +27,7 @@
                 </div>
                 <h1 class="event-title">Tech Escape</h1>
             </div>
-            <div class="timer-section">
+            <div class="timer-section" style="display:flex; align-items:center; gap:12px;">
                 <div class="countdown-timer" id="countdown">
                     <div class="time-unit">
                         <span class="time-value" id="minutes">15</span>
@@ -37,6 +37,11 @@
                         <span class="time-value" id="seconds">00</span>
                         <span class="time-label">Seconds</span>
                     </div>
+                </div>
+                <!-- Always-visible test controls for static deployment -->
+                <div class="test-controls" style="display:flex; gap:8px;">
+                    <a href="/api/test" target="_blank" style="background:#2563eb;color:#fff;padding:8px 12px;border-radius:8px;font-size:12px;white-space:nowrap;text-decoration:none;">Test API</a>
+                    <a href="/api/test-supabase" target="_blank" style="background:#16a34a;color:#fff;padding:8px 12px;border-radius:8px;font-size:12px;white-space:nowrap;text-decoration:none;">Test Supabase</a>
                 </div>
             </div>
         </div>
