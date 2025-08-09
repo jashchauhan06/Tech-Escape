@@ -1,0 +1,10 @@
+{
+  "name": "tech-escape-root",
+  "private": true,
+  "license": "UNLICENSED",
+  "dependencies": {
+    "@supabase/supabase-js": "^2.54.0"
+  }
+}
+
+
