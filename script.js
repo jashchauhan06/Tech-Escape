@@ -243,15 +243,13 @@ class TechEscapeGame {
             {
                 id: 3,
                 question: `
-                    <h4>🛰️ Limited Scanner</h4>
-                    <p>There are <strong>6</strong> beacons hidden. Use the <strong>Scanner</strong> to pulse‑reveal them (<strong>2</strong> uses). Click all to win.</p>
-                    <button id="scan3" class="btn btn-primary">🔦 Pulse Scan (2)</button>
-                    <div id="hunt3" style="position:relative;height:260px;margin-top:10px;border:1px solid var(--border-color);border-radius:12px;overflow:hidden;background:radial-gradient(circle at 20% 30%,rgba(59,130,246,.08),transparent 40%),radial-gradient(circle at 70% 60%,rgba(34,197,94,.07),transparent 40%);"></div>
-                    <div id="hunt3Progress" class="mono" style="margin-top:8px;color:var(--text-secondary)">Found: 0/6 | Scans left: 2</div>
+                    <h4>🧿 Find Me on the Page</h4>
+                    <p>There are <strong>8</strong> stealth marks hidden <em>anywhere</em> on this page (outside this card too). They’re tiny and barely visible. Find and click them all.</p>
+                    <div id="hunt3ProgressGlobal" class="mono" style="margin-top:8px;color:var(--text-secondary)">Found: 0/8</div>
                 `,
-                answer: 'HIDDEN{pulse_detective_3}',
-                hint: 'Time your scan and watch the edges.',
-                explanation: 'Short highlight pulses with limited charges.',
+                answer: 'HIDDEN{page_sleuth_3}',
+                hint: 'Edges and corners are suspicious.',
+                explanation: 'Fixed-position tiny targets around the viewport.',
                 interactive: true,
                 setupFunction: 'setupChallenge3'
             },
@@ -1435,72 +1433,67 @@ class TechEscapeGame {
         updateProgress();
     }
 
-    // Challenge 3: Limited Scanner (hidden beacons with 2 pulse scans)
+    // Challenge 3: Find Me on the Page (hidden marks across the viewport)
     setupChallenge3() {
-        const area = document.getElementById('hunt3');
-        const progress = document.getElementById('hunt3Progress');
-        const scanBtn = document.getElementById('scan3');
-        if (!area || !progress || !scanBtn) return;
+        const progress = document.getElementById('hunt3ProgressGlobal');
+        if (!progress) return;
 
-        const TOTAL = 6;
-        let scans = 2;
+        const TOTAL = 8;
         let found = 0;
-        const beacons = [];
+        const marks = [];
 
-        function updateProgress(){
-            progress.textContent = `Found: ${found}/${TOTAL} | Scans left: ${scans}`;
+        function update(){
+            progress.textContent = `Found: ${found}/${TOTAL}`;
             if (found===TOTAL){
-                progress.innerHTML = '🎉 All beacons found! Flag: <code>HIDDEN{pulse_detective_3}</code>';
-                window.techEscapeGame?.showMessage('📡 Sector cleared!', 'success');
-                scanBtn.disabled = true;
+                progress.innerHTML = '🎉 You found them all! Flag: <code>HIDDEN{page_sleuth_3}</code>';
+                window.techEscapeGame?.showMessage('🧿 Page mastered!', 'success');
             }
         }
 
-        for (let i=0;i<TOTAL;i++){
-            const b = document.createElement('div');
-            b.style.position='absolute';
-            b.style.width='14px'; b.style.height='14px'; b.style.borderRadius='50%';
-            b.style.transform='translate(-50%,-50%)';
-            b.style.left = (10+Math.random()*80)+'%';
-            b.style.top = (10+Math.random()*80)+'%';
-            b.style.background='transparent';
-            b.style.boxShadow='none';
-            b.dataset.found='0';
-            b.onclick=()=>{
-                if (b.dataset.found==='1') return;
-                b.dataset.found='1';
-                found++;
-                b.style.background='#f59e0b';
-                b.style.boxShadow='0 0 10px rgba(245,158,11,.9)';
-                updateProgress();
+        // Candidate anchor points around the page (corners, header, footer-ish)
+        const spots = [
+            { top:'12px', left:'12px' },
+            { top:'12px', right:'16px' },
+            { bottom:'16px', left:'16px' },
+            { bottom:'16px', right:'16px' },
+            { top:'50%', left:'8px' },
+            { top:'50%', right:'8px' },
+            { top:'120px', left:'50%' },
+            { bottom:'120px', left:'50%' },
+            { top:'80px', right:'200px' },
+            { bottom:'80px', left:'200px' }
+        ];
+
+        // Shuffle and pick first TOTAL
+        for (let i=spots.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [spots[i],spots[j]]=[spots[j],spots[i]]; }
+        const chosen = spots.slice(0, TOTAL);
+
+        for (const s of chosen){
+            const m = document.createElement('div');
+            m.style.position='fixed';
+            m.style.width='10px'; m.style.height='10px';
+            m.style.borderRadius='50%';
+            m.style.background='rgba(99,102,241,0.10)';
+            m.style.boxShadow='0 0 0 rgba(0,0,0,0)';
+            m.style.transition='box-shadow 120ms ease, transform 120ms ease, background 120ms ease';
+            Object.assign(m.style, s);
+            m.style.zIndex='1500';
+            m.title='';
+            m.dataset.found='0';
+            m.onmouseenter=()=>{ if(m.dataset.found==='0'){ m.style.boxShadow='0 0 6px rgba(99,102,241,.5)'; } };
+            m.onmouseleave=()=>{ if(m.dataset.found==='0'){ m.style.boxShadow='none'; } };
+            m.onclick=()=>{
+                if (m.dataset.found==='1') return;
+                m.dataset.found='1';
+                m.style.background='rgba(34,197,94,.85)';
+                m.style.boxShadow='0 0 10px rgba(34,197,94,.9)';
+                m.style.transform='scale(1.2)';
+                found++; update();
             };
-            area.appendChild(b); beacons.push(b);
+            document.body.appendChild(m); marks.push(m);
         }
 
-        function pulse(duration=700){
-            const start = Date.now();
-            const tick = () => {
-                const t = Date.now() - start;
-                const alpha = Math.max(0, 1 - t/duration);
-                for (const b of beacons){
-                    if (b.dataset.found==='1') continue;
-                    b.style.background = `rgba(59,130,246,${0.25*alpha})`;
-                    b.style.boxShadow = `0 0 ${10*alpha}px rgba(59,130,246,${0.7*alpha})`;
-                }
-                if (t<duration) requestAnimationFrame(tick); else {
-                    for (const b of beacons){ if (b.dataset.found==='0'){ b.style.background='transparent'; b.style.boxShadow='none'; } }
-                }
-            };
-            tick();
-        }
-
-        scanBtn.onclick = () => {
-            if (scans<=0) return;
-            scans--; pulse(); updateProgress();
-            if (scans===0) scanBtn.disabled = true;
-        };
-
-        updateProgress();
+        update();
     }
 
     // Challenge 4: Fallout-style Hacking
