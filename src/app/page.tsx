@@ -63,30 +63,27 @@ export default function Home() {
       {/* Connection Status */}
       <ConnectionStatus />
 
-      {/* Test Buttons - API and Supabase */}
-      <div className="fixed top-20 right-4 z-50">
-        <button 
-          onClick={testAPI}
-          className="bg-blue-500 text-white px-4 py-2 rounded-lg text-sm"
-        >
-          Test API (v2)
-        </button>
-        <button
-          onClick={testSupabase}
-          className="ml-2 bg-green-600 text-white px-4 py-2 rounded-lg text-sm"
-        >
-          Test Supabase
-        </button>
-        {apiStatus && (
-          <div className="mt-2 bg-gray-800 text-white px-3 py-2 rounded text-xs">
-            {apiStatus}
-          </div>
-        )}
-        {supabaseStatus && (
-          <div className="mt-2 bg-gray-800 text-white px-3 py-2 rounded text-xs">
-            {supabaseStatus}
-          </div>
-        )}
+      {/* Test Buttons - visible within the page flow */}
+      <div className="w-full flex justify-center mt-6">
+        <div className="flex items-center gap-3 bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded-lg px-4 py-3">
+          <button 
+            onClick={testAPI}
+            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm"
+          >
+            Test API
+          </button>
+          <button
+            onClick={testSupabase}
+            className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm"
+          >
+            Test Supabase
+          </button>
+          {(apiStatus || supabaseStatus) && (
+            <div className="text-xs text-[var(--text-secondary)]">
+              {apiStatus || supabaseStatus}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Main Content */}
