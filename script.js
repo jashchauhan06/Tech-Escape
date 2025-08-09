@@ -1387,73 +1387,78 @@ _____
         console.log('%c🏁 Flag: IEEE{hidden_flag_found}', 'color: #ffaa00; font-size: 14px; font-weight: bold;');
     }
 
-    // Challenge 2: Number System Conversion
+    // Challenge 2: Hidden Chips (Alt‑reveal)
     setupChallenge2() {
-        // Build a simple Morse playback and check
-        const playBtn = document.getElementById('morsePlay');
-        const led = document.getElementById('morseLed');
-        const input = document.getElementById('morseInput');
-        const check = document.getElementById('morseCheck');
-        const out = document.getElementById('morseResult');
+        const box = document.getElementById('hunt2');
+        const progress = document.getElementById('hunt2Progress');
+        if (!box || !progress) return;
 
-        if (!playBtn || !led || !input || !check || !out) return;
+        const TOTAL = 7;
+        let found = 0;
+        let altDown = false;
 
-        const ctx = new (window.AudioContext || window.webkitAudioContext)();
-        const dit = 120; // base unit ms
-        const dah = dit * 3;
-        const gap = dit; // between elements
-        const letterGap = dit * 3;
-        const wordGap = dit * 7;
-
-        // Encode a short phrase; final answer is a flag prompt
-        const phrase = 'radio signal unlocked';
-        const MORSE = {
-            'a': '.-', 'b': '-...', 'c': '-.-.', 'd': '-..', 'e': '.', 'f': '..-.', 'g': '--.', 'h': '....', 'i': '..', 'j': '.---', 'k': '-.-', 'l': '.-..', 'm': '--', 'n': '-.', 'o': '---', 'p': '.--.', 'q': '--.-', 'r': '.-.', 's': '...', 't': '-', 'u': '..-', 'v': '...-', 'w': '.--', 'x': '-..-', 'y': '-.--', 'z': '--..', ' ': ' '
-        };
-
-        function sleep(ms){ return new Promise(r=>setTimeout(r, ms)); }
-
-        async function beep(ms){
-            const osc = ctx.createOscillator();
-            const gain = ctx.createGain();
-            osc.frequency.value = 600;
-            gain.gain.value = 0.0001;
-            osc.connect(gain); gain.connect(ctx.destination);
-            osc.start();
-            gain.gain.exponentialRampToValueAtTime(0.2, ctx.currentTime + 0.01);
-            led.style.background = '#10b981';
-            await sleep(ms);
-            gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.01);
-            led.style.background = '#374151';
-            osc.stop(ctx.currentTime + 0.03);
+        function updateProgress() {
+            progress.textContent = `Found: ${found}/${TOTAL}`;
+            if (found === TOTAL) {
+                progress.innerHTML = '🎉 All found! Flag: <code>HIDDEN{stealth_hunter_2}</code>';
+                window.techEscapeGame?.showMessage('🕵️ Chips secured!', 'success');
+            }
         }
 
-        playBtn.onclick = async () => {
-            playBtn.disabled = true;
-            out.textContent = 'Playing...';
-            for (const ch of phrase) {
-                if (ch === ' ') { await sleep(wordGap); continue; }
-                const code = MORSE[ch] || '';
-                for (let i=0;i<code.length;i++){
-                    const c = code[i];
-                    await beep(c === '.' ? dit : dah);
-                    await sleep(i===code.length-1 ? 0 : gap);
-                }
-                await sleep(letterGap);
-            }
-            out.textContent = 'Done. Decode and type the phrase to get the flag.';
-            playBtn.disabled = false;
-        };
+        const chips = [];
+        for (let i = 0; i < TOTAL; i++) {
+            const chip = document.createElement('div');
+            chip.className = 'hidden-chip';
+            chip.style.position = 'absolute';
+            chip.style.width = '16px';
+            chip.style.height = '16px';
+            chip.style.borderRadius = '50%';
+            chip.style.transform = 'translate(-50%, -50%)';
+            chip.style.opacity = '0';
+            chip.style.pointerEvents = 'auto';
+            chip.style.transition = 'opacity 80ms linear';
+            // Random positions (avoid edges)
+            const left = 8 + Math.random() * 84;
+            const top = 8 + Math.random() * 84;
+            chip.style.left = left + '%';
+            chip.style.top = top + '%';
 
-        check.onclick = () => {
-            const val = (input.value || '').toLowerCase().trim();
-            if (val === phrase) {
-                out.innerHTML = '🎉 Correct! Flag: <code>AUDIO{radio_signal_unlocked}</code>';
-                this.showMessage('🎧 Audio decoded!', 'success');
-            } else {
-                out.textContent = '❌ Not quite. Listen again.';
+            chip.dataset.found = '0';
+            chip.onclick = () => {
+                if (chip.dataset.found === '1') return;
+                chip.dataset.found = '1';
+                found++;
+                chip.style.opacity = '1';
+                chip.style.background = '#10b981';
+                chip.style.boxShadow = '0 0 10px rgba(16,185,129,.8)';
+                updateProgress();
+            };
+            box.appendChild(chip);
+            chips.push(chip);
+        }
+
+        function refreshReveal() {
+            for (const chip of chips) {
+                if (chip.dataset.found === '1') continue;
+                chip.style.background = altDown ? 'rgba(16,185,129,.25)' : 'transparent';
+                chip.style.boxShadow = altDown ? '0 0 6px rgba(16,185,129,.3)' : 'none';
+                chip.style.opacity = altDown ? '0.18' : '0';
             }
+        }
+
+        const onKeyDown = (e) => {
+            if (e.key === 'Alt') { altDown = true; refreshReveal(); }
         };
+        const onKeyUp = (e) => {
+            if (e.key === 'Alt') { altDown = false; refreshReveal(); }
+        };
+        document.addEventListener('keydown', onKeyDown);
+        document.addEventListener('keyup', onKeyUp);
+
+        // Safety: stop revealing on mouse leave
+        box.addEventListener('mouseleave', () => { altDown = false; refreshReveal(); });
+
+        updateProgress();
     }
 
     // Challenge 3: Lights Out
