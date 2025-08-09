@@ -1371,7 +1371,7 @@ _____
         const isFirstRiddle = this.currentRiddle === 0;
 
         if (!isInGame || !isFirstRiddle) {
-            this.showMessage('🔍 Keep looking! The logo might be useful later...', 'info');
+            // Outside first riddle: do nothing, no hints
             return;
         }
 
@@ -1383,10 +1383,7 @@ _____
 
         const ieeeLogo = document.querySelector('.ieee-logo');
         const flag = ieeeLogo ? ieeeLogo.getAttribute('data-flag') : null;
-        if (!flag) {
-            this.showMessage('🔍 Keep looking! The flag might be hidden elsewhere...', 'info');
-            return;
-        }
+        if (!flag) return;
 
         this._logoFlagShown = true;
         this.showMessage(`🎯 You found a hidden flag: ${flag}`, 'success');
