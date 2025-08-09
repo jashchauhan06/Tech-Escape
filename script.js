@@ -244,7 +244,7 @@ class TechEscapeGame {
                 id: 3,
                 question: `
                     <h4>🧿 Find Me on the Page</h4>
-                    <p>There are <strong>8</strong> stealth marks hidden <em>anywhere</em> on this page (outside this card too). They’re tiny and barely visible. Find and click them all.</p>
+                    <p>There are <strong>8</strong> stealth marks hidden <em>anywhere</em> on this page (outside this card too). Drag the <strong>🔍 magnifier</strong> around to reveal and collect them automatically.</p>
                     <div id="hunt3ProgressGlobal" class="mono" style="margin-top:8px;color:var(--text-secondary)">Found: 0/8</div>
                 `,
                 answer: 'HIDDEN{page_sleuth_3}',
@@ -1480,18 +1480,46 @@ class TechEscapeGame {
             m.style.zIndex='1500';
             m.title='';
             m.dataset.found='0';
+            // Hover glow still works
             m.onmouseenter=()=>{ if(m.dataset.found==='0'){ m.style.boxShadow='0 0 6px rgba(99,102,241,.5)'; } };
             m.onmouseleave=()=>{ if(m.dataset.found==='0'){ m.style.boxShadow='none'; } };
-            m.onclick=()=>{
-                if (m.dataset.found==='1') return;
-                m.dataset.found='1';
-                m.style.background='rgba(34,197,94,.85)';
-                m.style.boxShadow='0 0 10px rgba(34,197,94,.9)';
-                m.style.transform='scale(1.2)';
-                found++; update();
-            };
             document.body.appendChild(m); marks.push(m);
         }
+
+        // Add draggable magnifier
+        const mag = document.createElement('div');
+        mag.textContent = '🔍';
+        mag.style.position='fixed';
+        mag.style.left='calc(50% - 20px)';
+        mag.style.top='calc(60% - 20px)';
+        mag.style.fontSize='28px';
+        mag.style.cursor='grab';
+        mag.style.userSelect='none';
+        mag.style.zIndex='1600';
+        document.body.appendChild(mag);
+
+        let dragging=false, offsetX=0, offsetY=0;
+        mag.onmousedown=(e)=>{ dragging=true; mag.style.cursor='grabbing'; offsetX=e.clientX- mag.getBoundingClientRect().left; offsetY=e.clientY- mag.getBoundingClientRect().top; e.preventDefault(); };
+        document.addEventListener('mouseup',()=>{ dragging=false; mag.style.cursor='grab'; });
+        document.addEventListener('mousemove',(e)=>{
+            if(!dragging) return;
+            const x=e.clientX-offsetX, y=e.clientY-offsetY;
+            mag.style.left=x+'px'; mag.style.top=y+'px';
+            // Check collision with marks (proximity)
+            const mRect = mag.getBoundingClientRect();
+            for (const d of marks){
+                if (d.dataset.found==='1') continue;
+                const r = d.getBoundingClientRect();
+                const intersect = !(r.right < mRect.left || r.left > mRect.right || r.bottom < mRect.top || r.top > mRect.bottom);
+                if (intersect){
+                    d.dataset.found='1';
+                    d.style.background='rgba(34,197,94,.85)';
+                    d.style.boxShadow='0 0 10px rgba(34,197,94,.9)';
+                    d.style.transform='scale(1.2)';
+                    found++; update();
+                }
+            }
+        });
 
         update();
     }
