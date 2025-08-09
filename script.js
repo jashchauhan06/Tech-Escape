@@ -229,21 +229,14 @@ class TechEscapeGame {
             {
                 id: 2,
                 question: `
-                    <h4>📻 Beep Beep Decode</h4>
-                    <p>Listen to the beeps and decode the hidden message. Dots and dashes follow Morse timing. Then type the decoded phrase.</p>
-                    <div style="display:flex;align-items:center;gap:12px;margin:10px 0;">
-                        <button id="morsePlay" class="btn btn-primary">▶️ Play</button>
-                        <div id="morseLed" style="width:14px;height:14px;border-radius:50%;background:#374151;border:1px solid #4b5563;"></div>
-                    </div>
-                    <div style="margin:8px 0;">
-                        <input id="morseInput" type="text" placeholder="Decoded message" class="conversion-input" style="width:100%;padding:10px;border-radius:8px;background:var(--bg-tertiary);border:1px solid var(--border-color);color:var(--text-primary);" />
-                    </div>
-                    <button id="morseCheck" class="btn btn-primary">Check</button>
-                    <div id="morseResult" style="margin-top:10px;color:var(--text-secondary)"></div>
+                    <h4>🕵️ Hidden Chips (Alt‑reveal)</h4>
+                    <p>Find <strong>7</strong> microchips hidden in the static. Hold <strong>Alt</strong> while hovering to faintly reveal, then click to collect.</p>
+                    <div id="hunt2" style="position:relative;height:240px;border:1px solid var(--border-color);border-radius:12px;overflow:hidden;background-image:repeating-linear-gradient(45deg,rgba(255,255,255,0.02) 0 2px,rgba(0,0,0,0.05) 2px 4px);"></div>
+                    <div id="hunt2Progress" class="mono" style="margin-top:8px;color:var(--text-secondary)">Found: 0/7</div>
                 `,
-                answer: 'AUDIO{radio_signal_unlocked}',
-                hint: 'Short beep = dot, long beep = dash. Listen to spacing.',
-                explanation: 'Standard Morse timing.',
+                answer: 'HIDDEN{stealth_hunter_2}',
+                hint: 'Alt key weakly lights up the chips.',
+                explanation: 'Alt‑assist highlight; precise clicks required.',
                 interactive: true,
                 setupFunction: 'setupChallenge2'
             },
