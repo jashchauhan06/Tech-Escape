@@ -1476,10 +1476,7 @@ class TechEscapeGame {
         if (!flag) return;
         
         this._logoFlagShown = true;
-            this.showMessage(`🎯 You found a hidden flag: ${flag}`, 'success');
-            console.log('%c🎯 IEEE Logo Clicked!', 'color: #00ff00; font-size: 16px; font-weight: bold;');
-            console.log('%c🏁 Flag found:', 'color: #ffaa00; font-size: 14px;');
-            console.log(`%c${flag}`, 'color: #ffaa00; font-size: 16px; font-weight: bold;');
+        this.showMessage(`🎯 You found a hidden flag: ${flag}`, 'success');
     }
 
     // === CHALLENGE SETUP FUNCTIONS ===
@@ -1488,11 +1485,7 @@ class TechEscapeGame {
     setupChallenge1() {
         // Hidden flag: IEEE{hidden_flag_found}
         // This challenge does not have interactive inputs, so no setup needed here
-        
-        // Log hidden flag to console for advanced players
-        console.log('%c🔍 Hidden Flag Challenge', 'color: #00aaff; font-size: 16px; font-weight: bold;');
-        console.log('%c💡 Check the page source, inspect elements, or look in the console for clues!', 'color: #00ffaa; font-size: 12px;');
-        console.log('%c🏁 Flag: IEEE{hidden_flag_found}', 'color: #ffaa00; font-size: 14px; font-weight: bold;');
+
     }
 
     // Challenge 2: Hidden Chips (Alt‑reveal)
