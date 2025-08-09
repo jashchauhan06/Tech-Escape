@@ -513,6 +513,53 @@ _____
         }
     }
 
+    // Freeze/unfreeze the UI when admin pauses the event
+    setFrozenUI(isFrozen, message = '⏸ Event paused by admin') {
+        const overlayId = 'freeze-overlay';
+        let overlay = document.getElementById(overlayId);
+        if (isFrozen) {
+            if (!overlay) {
+                overlay = document.createElement('div');
+                overlay.id = overlayId;
+                overlay.style.position = 'fixed';
+                overlay.style.inset = '0';
+                overlay.style.background = 'rgba(0,0,0,0.6)';
+                overlay.style.backdropFilter = 'blur(2px)';
+                overlay.style.display = 'flex';
+                overlay.style.alignItems = 'center';
+                overlay.style.justifyContent = 'center';
+                overlay.style.zIndex = '2000';
+                overlay.style.pointerEvents = 'all';
+                const box = document.createElement('div');
+                box.style.background = '#111827';
+                box.style.border = '1px solid #374151';
+                box.style.borderRadius = '12px';
+                box.style.padding = '16px 20px';
+                box.style.boxShadow = '0 20px 40px rgba(0,0,0,0.35)';
+                box.style.color = '#fff';
+                box.style.fontSize = '14px';
+                box.style.textAlign = 'center';
+                box.id = overlayId + '-text';
+                box.textContent = message;
+                overlay.appendChild(box);
+                document.body.appendChild(overlay);
+            } else {
+                const t = document.getElementById(overlayId + '-text');
+                if (t) t.textContent = message;
+            }
+            // Prevent keyboard interactions
+            if (!this._freezeKeyHandler) {
+                this._freezeKeyHandler = (e) => { e.preventDefault(); e.stopPropagation(); };
+            }
+            document.addEventListener('keydown', this._freezeKeyHandler, true);
+        } else {
+            if (overlay) overlay.remove();
+            if (this._freezeKeyHandler) {
+                document.removeEventListener('keydown', this._freezeKeyHandler, true);
+            }
+        }
+    }
+
     // Poll admin-controlled game status
     async pollGameStatus() {
         try {
@@ -541,16 +588,19 @@ _____
             if (!data.started) {
                 ensureBanner('⏳ Event has not started yet. Please wait for the admin.');
                 if (this.timerInterval) { clearInterval(this.timerInterval); this.timerInterval = null; }
+                this.setFrozenUI(false);
             } else if (data.paused) {
                 ensureBanner('⏸ Event paused by admin');
                 if (this.timerInterval) { clearInterval(this.timerInterval); this.timerInterval = null; }
                 // Freeze display at current remaining
                 const endMs = Date.now() + (data.remainingMs || 0);
                 this.updateTimer(endMs); // one update to reflect current remaining
+                this.setFrozenUI(true);
             } else {
                 if (banner) banner.remove();
                 const endMs = Date.now() + (data.remainingMs || 0);
                 this.initializeTimer(endMs);
+                this.setFrozenUI(false);
             }
         } catch (e) {
             console.warn('Failed to fetch game status');
