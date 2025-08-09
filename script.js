@@ -791,6 +791,15 @@ class TechEscapeGame {
         this.updateHintsDisplay();
         this.startTime = new Date();
 
+        // Restore last visited riddle from localStorage if available
+        try {
+            const savedIdxRaw = localStorage.getItem('te_currRiddle');
+            const savedIdx = savedIdxRaw ? parseInt(savedIdxRaw, 10) : NaN;
+            if (!Number.isNaN(savedIdx) && savedIdx >= 0 && savedIdx < this.riddles.length) {
+                this.currentRiddle = savedIdx;
+            }
+        } catch {}
+
         // Setup game listeners
         this.setupGameListeners();
 
@@ -884,6 +893,7 @@ class TechEscapeGame {
             this.currentRiddle--;
             this.loadCurrentRiddle();
             this.saveGameProgress();
+            try { localStorage.setItem('te_currRiddle', String(this.currentRiddle)); } catch {}
             
             // Show navigation message
             this.showMessage(`↩️ Moved to Challenge ${this.currentRiddle + 1}`, 'info');
@@ -981,6 +991,7 @@ class TechEscapeGame {
             } catch {}
 
             this.currentRiddle++;
+            try { localStorage.setItem('te_currRiddle', String(this.currentRiddle)); } catch {}
             this.saveGameProgress();
 
             setTimeout(() => {
@@ -1486,6 +1497,10 @@ class TechEscapeGame {
             document.body.appendChild(m); marks.push(m);
         }
 
+        // Remove any existing magnifier to prevent duplicates
+        const existingMag = document.getElementById('global-magnifier');
+        if (existingMag) existingMag.remove();
+
         // Add draggable magnifier
         const mag = document.createElement('div');
         mag.textContent = '🔍';
@@ -1496,6 +1511,7 @@ class TechEscapeGame {
         mag.style.cursor='grab';
         mag.style.userSelect='none';
         mag.style.zIndex='1600';
+        mag.id = 'global-magnifier';
         document.body.appendChild(mag);
 
         let dragging=false, offsetX=0, offsetY=0;
