@@ -1625,17 +1625,10 @@ class TechEscapeGame {
             return;
         }
 
-        // Reveal flag once per session
-        if (this._logoFlagShown) {
-            this.showMessage('✅ Already discovered. Solve the challenge to proceed!', 'info');
-            return;
-        }
-
         const ieeeLogo = document.querySelector('.ieee-logo');
         const flag = ieeeLogo ? ieeeLogo.getAttribute('data-flag') : null;
         if (!flag) return;
         
-        this._logoFlagShown = true;
         this.showMessage(`🎯 You found a hidden flag: ${flag}`, 'success');
     }
 
