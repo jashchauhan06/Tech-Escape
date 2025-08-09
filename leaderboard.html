@@ -79,6 +79,11 @@
     .btn { appearance: none; border:1px solid var(--border); color: var(--text); background: var(--card-2); padding:8px 12px; border-radius:8px; font-size:12px; cursor:pointer; }
     .btn:hover { filter: brightness(1.1); }
 
+    /* Make the Challenges column bar start closer to the column edge and fill the width */
+    thead th:nth-child(3),
+    tbody td:nth-child(3) { padding-left: 6px; }
+    tbody td:nth-child(3) .progress-wrap { width: 100%; }
+
     /* Skeleton */
     .skeleton { position: relative; overflow: hidden; background: rgba(255,255,255,.04); border-radius: 8px; height: 12px; }
     .skeleton::after { content:''; position:absolute; inset:0; transform: translateX(-100%); background: linear-gradient(90deg, transparent, rgba(255,255,255,.06), transparent); animation: shimmer 1.4s infinite; }
