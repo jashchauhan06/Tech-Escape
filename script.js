@@ -37,7 +37,7 @@ class TechEscapeGame {
         try {
             this.initializeEventListeners();
             this.initializeTimer();
-            this.checkAuthStatus();
+            // Removed auto-login via localStorage; require explicit login
             this.initializePopups();
             this.gameInitialized = true;
             console.log('✅ Game initialized successfully');
@@ -580,23 +580,11 @@ _____
         localStorage.removeItem('techEscapeTeam');
     }
 
-    // Check if user is already authenticated
-    checkAuthStatus() {
-        const savedTeam = localStorage.getItem('techEscapeTeam');
-        if (savedTeam) {
-            try {
-                this.currentTeam = JSON.parse(savedTeam);
-                this.showGameInterface();
-                this.loadGameProgress();
-            } catch (error) {
-                console.error('Error loading saved team:', error);
-                localStorage.removeItem('techEscapeTeam');
-            }
-        }
-    }
+    // Auto-login disabled
+    checkAuthStatus() {}
 
     // Handle login
-    handleLogin(e) {
+    async handleLogin(e) {
         e.preventDefault();
         
         const teamName = document.getElementById('teamName')?.value?.trim();
@@ -607,20 +595,40 @@ _____
             return;
         }
 
-        const team = this.teams.find(t => 
-            t.name.toLowerCase() === teamName.toLowerCase() && t.password === password
-        );
-
-        if (team) {
-            this.currentTeam = team;
-            localStorage.setItem('techEscapeTeam', JSON.stringify(team));
+        try {
+            const resp = await fetch('/api/login-team', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ teamName, password })
+            });
+            const data = await resp.json();
+            if (!resp.ok || !data.success) {
+                this.showMessage(data.error || 'Invalid team name or password. Please try again.', 'error');
+                return;
+            }
+            this.currentTeam = {
+                id: data.team.id,
+                name: data.team.name,
+                leader: data.team.leader,
+                email: data.team.email,
+                password: data.team.password,
+                size: data.team.size,
+                progress: data.team.progress || {
+                    currentRiddle: 0,
+                    hintsUsed: 0,
+                    startTime: new Date().toISOString(),
+                    completedRiddles: []
+                },
+                registeredAt: data.team.registeredAt || new Date().toISOString()
+            };
             this.showMessage('Welcome back! Loading your progress...', 'success');
             setTimeout(() => {
                 this.showGameInterface();
                 this.loadGameProgress();
-            }, 1000);
-        } else {
-            this.showMessage('Invalid team name or password. Please try again.', 'error');
+            }, 800);
+        } catch (err) {
+            console.error('Login error:', err);
+            this.showMessage('Login failed due to a network error.', 'error');
         }
     }
 
@@ -658,34 +666,9 @@ _____
                 return;
             }
 
-            const newTeam = {
-                // Use Supabase row id if present; else fallback to timestamp
-                id: data.team?.id || Date.now(),
-                name: teamName,
-                leader: teamLeader,
-                email,
-                password,
-                size: teamSize,
-                progress: {
-                    currentRiddle: 0,
-                    hintsUsed: 0,
-                    startTime: new Date().toISOString(),
-                    completedRiddles: []
-                },
-                registeredAt: new Date().toISOString()
-            };
-
-            // Keep local cache for gameplay
-            this.teams.push(newTeam);
-            this.saveTeams();
-            this.currentTeam = newTeam;
-            localStorage.setItem('techEscapeTeam', JSON.stringify(newTeam));
-
-            this.showMessage(`Team "${teamName}" registered successfully! Welcome to Tech Escape!`, 'success');
-            setTimeout(() => {
-                this.showGameInterface();
-                this.initializeGameProgress();
-            }, 1500);
+            // Registration successful — require login instead of starting game
+            this.showMessage(`Team \"${teamName}\" registered successfully! Please login to start.`, 'success');
+            this.showLoginForm(new Event('click'));
         } catch (err) {
             console.error('Register error:', err);
             this.showMessage('Registration failed due to a network error.', 'error');
@@ -729,14 +712,12 @@ _____
             registeredAt: new Date().toISOString()
         };
 
-        this.currentTeam = testTeam;
-        localStorage.setItem('techEscapeTeam', JSON.stringify(testTeam));
-
-        this.showMessage('Demo team created! Starting game...', 'success');
-        setTimeout(() => {
-            this.showGameInterface();
-            this.initializeGameProgress();
-        }, 1000);
+        // Demo no longer auto-logs; just prefill login fields for convenience
+        const loginName = document.getElementById('teamName');
+        const loginPass = document.getElementById('teamPassword');
+        if (loginName) loginName.value = testTeam.name;
+        if (loginPass) loginPass.value = testTeam.password;
+        this.showMessage('Demo team filled in login form. Click Start Adventure to log in.', 'info');
     }
 
     // Show game interface
@@ -1200,11 +1181,7 @@ _____
 
     // Save teams to localStorage
     saveTeams() {
-        try {
-            localStorage.setItem('techEscapeTeams', JSON.stringify(this.teams));
-        } catch (error) {
-            console.error('Error saving teams:', error);
-        }
+        // No-op: local storage removed
     }
 
     // Show message with throttling
